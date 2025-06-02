@@ -1,7 +1,7 @@
 # XmlCore
 
 ## 🛒 Artikel- och Orderhantering – ASP.NET Core Blazor
-##📌 Beskrivning
+## 📌 Beskrivning
 Denna applikation hanterar artiklar och ordrar genom ett gränssnitt där användaren kan skapa artiklar, lägga ordrar och söka efter befintliga beställningar. Databasen används för att lagra all information och följer databasnormalisering för optimal prestanda.
 
 Applikationen är byggd i ASP.NET Core Blazor med .NET 8 och använder Microsoft SQL Server för datalagring. Entity Framework hanterar objektrelationell avbildning (ORM).
