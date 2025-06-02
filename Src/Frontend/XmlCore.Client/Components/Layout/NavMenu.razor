@@ -1,0 +1,159 @@
+﻿@using XmlCore.Client.Components.Pages
+@using XmlCore.Client.Services
+@using Microsoft.AspNetCore.Components.Authorization
+
+@inject CompanyManager companyManager
+@inject UserManager userManager
+@inject NavigationManager NavigationManager
+@inject Shop.Cart cart
+
+
+
+<style>
+    .footer-sidebar {
+        position: absolute;
+        bottom: 0;
+        width: 100%;
+        text-align: center;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color:red;
+        font-weight: bold;
+        font-size: 80px;      
+        
+        }
+
+    .card-image img {
+        width: 50%;
+        border-radius: 20px;
+    }
+
+    .card-body p {
+        font-size: 1.2em;
+        margin: 1em 0;
+    }
+</style>
+
+
+
+
+<div class="top-row ps-3 navbar navbar-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand"></a>
+    </div>
+   
+
+</div>
+
+<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
+<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
+   
+    <nav class="flex-column">
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="/">
+                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
+            </NavLink>
+        </div>
+
+        @if (!userManager.Exists && !companyManager.Exists)
+        {
+
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="LoginPage">
+                    <h4><span class="bi bi-door-open" aria-hidden="true"></span></h4>Login
+                </NavLink>
+            </div>
+        }
+        
+        @if (userManager.Exists)
+        {
+
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="AdminProfilePage">
+                    <h4><span class="bi bi-person-square" aria-hidden="true"></span></h4> Profile
+                </NavLink>
+            </div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="SeeAllArticles">
+                    <h4><span class="bi bi-gift" aria-hidden="true"></span></h4> Articles
+                </NavLink>
+            </div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="SeeAllCompanies">
+                    <h4><span class=" bi bi-buildings" aria-hidden="true"></span></h4> Companies
+                </NavLink>
+            </div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="OrderPage">
+                    <h4><span class="bi bi-archive" aria-hidden="true"></span></h4> Orders
+                </NavLink>
+            </div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="RegisterNewAdmin">
+                    <h4><span class="bi bi-person-lines-fill" aria-hidden="true"></span></h4> Register new Admin
+                </NavLink>
+            </div>
+
+        }
+
+        @if (companyManager.Exists)
+        {
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="ProfilePage">
+                    <h4><span class="bi bi-person-square" aria-hidden="true"></span></h4> Profile
+                </NavLink>
+
+            </div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="UpdateInfoPage">
+                    <h4><span class="bi bi-sliders" aria-hidden="true"></span></h4> Update Profile
+                </NavLink>
+            </div>
+
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="OrderHistory">
+                    <h4><span class="bi bi-archive" aria-hidden="true"></span></h4> Order History
+                </NavLink>
+            </div>
+
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="Shop">
+                    <h4><span class="bi bi-shop" aria-hidden="true"></span></h4> Shop
+                </NavLink>
+            </div>
+           
+        }
+        
+
+
+    </nav>
+    
+    
+    
+
+    <footer class="footer-sidebar m-3">
+        <div class="card-body">
+            <div class="card-image">
+                <div class="card-body">
+                    <div class="card-image">
+                        <img src="Images/cgi.Background.jpg" alt="signaturePic"/>
+                    </div>
+                </div>
+            </div>
+        </div>
+      
+    </footer>
+   
+    
+
+
+</div>
+
+@code
+{
+    
+   
+
+}

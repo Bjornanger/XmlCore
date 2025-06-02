@@ -1,0 +1,241 @@
+﻿@page "/LoginPage"
+
+@using Microsoft.AspNetCore.Http.Extensions
+@using XmlCore.Client.Services
+@using XmlCore.Shared.DTO
+@using XmlCore.Shared.Entities
+@using XmlCore.Shared.Interface
+
+
+
+
+@inject IJSRuntime JSRuntime
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+@inject CompanyManager companyManager
+@inject UserManager userManager
+
+@inject ICompanyInterface<CompanyDTO> adminCompanyService
+@inject IUserInterface<User> adminUserService
+
+
+<PageTitle>Login</PageTitle>
+<style>
+  
+
+
+    .normal-button {
+        width: auto; 
+        height: auto;
+        padding: 10px 20px; 
+           
+    }
+
+
+    .card {
+        border: 1px solid #ddd;
+        border-radius: 30px;
+        padding: 1em;
+        margin-top: 60px;
+        margin-bottom: 20px;
+        margin-left: 20px;
+        margin-right: 20px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        opacity: 0.95;
+        background: linear-gradient(to bottom right, #fff, #f0f0f0); 
+        transition: transform 0.2s, box-shadow 0.2s; 
+    }
+
+     
+    .card-title h1 {
+        font-size: 2em;
+        margin-bottom: 0.5em;
+        font-size: 40px;
+        font-weight: 600; 
+        color: #333; }
+
+    .card-body p {
+        font-size: 1em;
+        margin: 1em 0;
+        color: #666; 
+    }
+
+    .card-footer button {
+        padding: 0.5em 1em;
+        font-size: 1em;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.2s; 
+    }
+
+     
+           
+ 
+    
+</style>
+
+
+
+@rendermode InteractiveServer
+
+<div class="welcome-Background">
+    <div style="display: flex; justify-content: center; align-items: center; height: 100vh;">
+        <div style="width: 40%;">
+                <Card Shadow="Shadow.Default" class="card card-opacity">
+                    <EditForm FormName="Login" Model="accessModel">
+                        <CardTitle class="card-title">
+                        <h1>Sign in to your account</h1>
+                        </CardTitle>
+
+                        <CardBody class="card-body" TextAlignment="TextAlignment.Center">
+                            <p>
+                                <label for="loginEmail">Email</label>
+                                <InputText id="loginEmail" class="form-control" @bind-Value="accessModel.EmailToCheck" Placeholder="name@blazorise.com"/>
+
+                                <Divider/>
+
+                                <label for="loginPassword">Password</label>
+                                <InputText id="loginPassword" Type="password" class="form-control" @bind-Value="accessModel.PasswordToCheck" Placeholder="********"/>
+                            </p>
+                         
+                        </CardBody>
+
+                        <CardFooter class="card-footer">
+                            <button class=" mx-auto glow-on-hover"  @onclick="() => SignInCheck(accessModel)" Block Size="Size.Default">Sign in</button>
+                        </CardFooter>
+                    </EditForm>
+                </Card>
+            </div>
+        </div>
+        
+        
+        
+
+        
+
+
+
+
+
+</div>
+
+
+
+
+
+
+
+
+@code {
+
+
+    private List<CompanyDTO> companyList { get; set; } = new List<CompanyDTO>();
+    private List<User> userList { get; set; } = new List<User>();
+
+    public SignInModel accessModel { get; set; } = new SignInModel();
+
+    
+
+    //Authentication
+    //public string userIdentifier = string.Empty;
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        companyList.AddRange(await adminCompanyService.GetAllAsync());
+        userList.AddRange(await adminUserService.GetAllAsync());
+    }
+
+    
+
+    public class SignInModel()
+    {
+
+        public string EmailToCheck { get; set; }
+        public string PasswordToCheck { get; set; }
+    }
+
+    private async Task SignInCheck(SignInModel signInCheck)
+    {
+
+        // ((CustomAuthStateProvider)AuthenticationStateProvider)
+        //     .AuthenticateUser(userIdentifier);
+
+
+
+
+        if (
+            signInCheck.EmailToCheck is null 
+            ||
+            signInCheck.PasswordToCheck is null
+        )
+        {
+            await ShowMessage("Email or Password incorrect, try again.");
+            return;
+        }
+
+     
+
+
+        var companyAccess = companyList.FirstOrDefault(c => c.Email == signInCheck.EmailToCheck && c.Password == signInCheck.PasswordToCheck);
+
+
+     
+
+
+        if (companyAccess != null)
+        {
+            companyManager.Set(companyAccess);
+            MethodToRedirectToProfilePage();
+           
+            
+
+        }
+
+
+        var userAccess = userList.FirstOrDefault(u => u.Email == signInCheck.EmailToCheck && u.Password == signInCheck.PasswordToCheck);
+
+        if (userAccess != null)
+        {
+            userManager.Set(userAccess);
+            MethodToRedirectToAdminPage();
+            
+        }
+
+        return;
+
+
+
+
+
+
+    }
+
+    void MethodToRedirectToProfilePage()
+    {
+        NavigationManager.NavigateTo("/ProfilePage", false);
+        StateHasChanged();
+
+    }
+    void MethodToRedirectToAdminPage()
+    {
+        NavigationManager.NavigateTo("/AdminFrontPage", false);
+        StateHasChanged();
+
+
+    }
+
+    private async Task ShowMessage(string message)
+    {
+        await JSRuntime.InvokeVoidAsync("alert", message);
+    }
+
+
+   
+
+}

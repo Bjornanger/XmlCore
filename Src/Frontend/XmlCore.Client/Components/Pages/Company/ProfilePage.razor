@@ -1,0 +1,117 @@
+﻿@page "/ProfilePage"
+@using XmlCore.Client.Services
+@using XmlCore.Shared.DTO
+@using XmlCore.Shared.Interface
+
+@inject NavigationManager NavigationManager
+@inject Shop.Cart cart
+@inject ICompanyInterface<CompanyDTO> adminCompanyService
+@inject CompanyManager companyManager
+
+
+
+@rendermode InteractiveServer
+
+<PageTitle>Profile</PageTitle>
+
+<style>
+    .profile-image {
+        width: 50%;
+        height: 50%;
+        -o-object-position: center;
+        justify-content: center;
+        border-radius: 8px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+       
+
+    .card-title h3 {
+        font-size: 2em;
+        margin-bottom: 0.5em;
+        font-weight: 400;
+        color: black;
+    }
+
+</style>
+
+
+<div class="welcome-Background">
+   <div class="top-row px-4 navTop" style="display: flex; background-color: transparent;">
+
+        <Button class="glow-red-on-hover" Color="Color.Dark" Type="ButtonType.Submit" Style="color:blueviolet" Size="Size.Default" @onclick="LogOut"> Logout</Button>
+
+   </div>
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+
+                <Card class="card-margin card-visual">
+                    <CardImage Shadow="Shadow.Default" class="profile-image" Source="..\Images\companyDefault.jpg" Alt="Profile"></CardImage>
+
+                    <CardHeader class="card-header">@activeCompany.CompanyName</CardHeader>
+                    <CardBody TextColor="TextColor.Black50" TextWeight="TextWeight.Bold">
+                        <CardTitle class="card-title" TextColor="TextColor.Black50" TextWeight="TextWeight.Bold"><h3>About Us</h3></CardTitle>
+                        <p>
+                            We at @activeCompany.CompanyName pride ourselves on delivering exceptional service and tailored solutions to meet the unique needs of our clients, whether you're looking for unparalleled hospitality or seamless logistics management.
+                            
+                            </p>
+                        <CardTitle TextColor="TextColor.Black50" TextWeight="TextWeight.Bold"> <h3>Contact Information</h3></CardTitle>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item"><strong>Email:</strong> @activeCompany.Email</li>
+                            <li class="list-group-item"><strong>Phone:</strong> @activeCompany.Phone</li>
+                            <li class="list-group-item"><strong>Address:</strong> @activeCompany.Address</li>
+                            <li class="list-group-item"><strong>City:</strong> @activeCompany.City</li>
+                            <li class="list-group-item"><strong>Country:</strong> @activeCompany.Country</li>
+                        </ul>
+                    </CardBody>
+                </Card>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@code {
+
+
+
+    private CompanyDTO activeCompany { get; set; } = new CompanyDTO();
+    private List<CompanyDTO> companyList { get; set; } = new List<CompanyDTO>();
+
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        companyList.AddRange(await adminCompanyService.GetAllAsync());
+        activeCompany = companyManager.Get();
+        StateHasChanged();
+    }
+
+    #region Button Redirection
+
+    private async void LogOut()
+    {
+        cart.ListOfArticles.Clear();
+        companyManager.Clear();
+        MethodToRedirectToLogin();
+        StateHasChanged();
+
+    }
+    void MethodToRedirectToLogin()
+    {
+
+        NavigationManager.NavigateTo("/LoginPage", false);
+        StateHasChanged();
+
+    }
+
+
+    #endregion
+   
+
+   
+
+
+}

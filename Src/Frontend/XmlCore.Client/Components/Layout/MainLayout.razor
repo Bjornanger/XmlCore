@@ -1,0 +1,64 @@
+﻿@using XmlCore.Client.Components.Pages
+@using XmlCore.Client.Services
+
+@inherits LayoutComponentBase
+
+
+
+<style>
+      .topBar-CGI {
+        position: absolute;
+        bottom: 0;
+        width: 100%;
+        text-align: center;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color:red;
+        font-weight: bold;
+        font-size: 60px;     
+        
+
+        }
+        
+</style>
+
+
+<div class="page">
+    <div class="sidebar">
+       
+        <NavMenu/>
+
+
+        
+    </div>
+
+    <main>
+        <div class="top-row px-4 navTop topBar-CGI" style="display: flex; gap: 10px;">CGI
+         
+                 
+        </div>
+
+
+        <article class="content" >
+            @Body
+        </article>
+        
+       
+    </main>
+</div>
+
+
+
+
+<div id="blazor-error-ui">
+    An unhandled error has occurred.
+    <a href="" class="reload">Reload</a>
+    <a class="dismiss">🗙</a>
+
+   
+
+</div>
+
+
+

@@ -1,0 +1,246 @@
+﻿@page "/UpdateArticle"
+@using XmlCore.Client.Services
+@using XmlCore.Shared.DTO
+@using XmlCore.Shared.Entities
+@using XmlCore.Shared.Interface
+
+@inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+@inject UserManager UserManager
+@inject IArticleInterface<ArticleDTO> adminArticleService
+@inject ICategoryInterface<Category> adminCategoryService
+
+@rendermode InteractiveServer
+
+<PageTitle>Update Article</PageTitle>
+
+
+<div class="welcome-Background">
+
+    <div class="top-row px-4 navTop" style="display: flex; gap: 10px; background-color: transparent;">
+
+        <Button class="glow-green-on-hover" Color="Color.Dark" Type="ButtonType.Submit" Style="color:blueviolet" Size="Size.Default" @onclick="GoBack"> Go Back</Button>
+
+        <Button class="glow-red-on-hover" Color="Color.Dark" Type="ButtonType.Submit" Style="color:blueviolet" Size="Size.Default" @onclick="LogOut"> Logout</Button>
+
+    </div>
+
+
+    <div class="row">
+
+        <div class="col"></div>
+
+        <div class="col m-3">
+            <h3>UpdateArticle</h3>
+            <EditForm FormName="searchForArticle" Model="searchedArticle.Id" OnValidSubmit="SearchForArticleToUpdate">
+                <InputSelect id="searchForArticle" @bind-Value="searchedArticle.Id">
+                    <option value=""></option>
+                    @foreach (var article in allArticles)
+                    {
+                        <option value="@article.Id">@article.Name</option>
+                    }
+                </InputSelect>
+                <Button Type="ButtonType.Submit" class="glow-on-hover btn-margin">Search</Button>
+            </EditForm>
+            
+
+            <section>
+                <EditForm FormName="updateArticle" Model="updateArticle" OnValidSubmit="Update">
+                    <DataAnnotationsValidator />
+                    <div>
+                        <label for="articleNumber">ArticleNumber:</label>
+                        <InputText id="articleNumber" class="form-control" @bind-Value="updateArticle.ArticleNumber" readonly></InputText>
+                    </div>
+                    <div>
+                        <label for="articleName">Article Name:</label>
+                        <InputText id="articleName" class="form-control" @bind-Value="updateArticle.Name"></InputText>
+                    </div>
+                    <div>
+                        <label for="articleDescription">Article Description:</label>
+                        <InputText id="articleDescription" class="form-control" @bind-Value="updateArticle.Description" placeholder="New description:"></InputText>
+                    </div>
+                    <div>
+                        <label for="articleCategory">Article Category:</label>
+                        <InputSelect id="articleCategory" @bind-Value="updateArticle.Category">
+                            <option value=""></option>
+                            @foreach (var category in allCategories)
+                            {
+                                <option value="@category.Id">@category.Name</option>
+                            }
+                        </InputSelect>
+                        <div>
+                            <label for="articlePrice">New Price $:</label>
+                            <InputNumber id="articlePrice" class="form-control" @bind-Value="updateArticle.Price" Placeholder="Set new price:"></InputNumber>
+                        </div>
+                        <div>
+                            <label for="articleStock">New Stock volume:</label>
+                            <InputNumber id="articleStock" class="form-control" @bind-Value="updateArticle.Stock" Placeholder="Set new stock volume:"></InputNumber>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="articleStatus">Article Status:</label>
+                        <button type="button" @onclick="() => { updateArticle.Status = ! updateArticle.Status; _isAviable = ! _isAviable; }">@StatusLabel</button>
+                    </div>
+                    <Button Type="ButtonType.Submit" class="glow-on-hover btn-margin">Update</Button>
+                </EditForm>
+            </section>
+
+
+
+        </div>
+        <div class="col"></div>
+
+    </div>
+</div>
+
+
+
+
+
+
+
+@code {
+    private ArticleDTO updateArticle { get; set; } = new ArticleDTO();
+    private ArticleDTO searchedArticle { get; set; } = new ArticleDTO();
+
+    private List<ArticleDTO> allArticles { get; set; } = new List<ArticleDTO>();
+    private List<Category> allCategories { get; set; } = new List<Category>();
+
+    private bool _isAviable = true;
+    private string StatusLabel => _isAviable ? "Active" : "Not Active";
+
+    private string ErrorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        allArticles.AddRange(await adminArticleService.GetAllAsync());
+        allCategories.AddRange(await adminCategoryService.GetAllAsync());
+    }
+
+    #region Button Redirection
+
+    private async void GoBack()
+    {
+
+        MethodToRedirectToSeeArticlePage();
+        StateHasChanged();
+
+    }
+
+    void MethodToRedirectToSeeArticlePage()
+    {
+        NavigationManager.NavigateTo("/SeeAllArticles", false);
+        StateHasChanged();
+
+    }
+
+    private async void LogOut()
+    {
+
+        UserManager.Clear();
+        MethodToRedirectToLogin();
+        StateHasChanged();
+
+    }
+
+
+
+
+    void MethodToRedirectToLogin()
+    {
+
+        NavigationManager.NavigateTo("/LoginPage", false);
+        StateHasChanged();
+
+    }
+
+
+    #endregion
+
+    private async void SearchForArticleToUpdate()
+    {
+
+        if (searchedArticle.Id == Guid.Empty)
+        {
+            return;
+        }
+
+
+        var result = await adminArticleService.GetByIdAsync(searchedArticle.Id);
+
+
+        if (!string.IsNullOrEmpty(result.ErrorMessage))
+        {
+            ErrorMessage = result.ErrorMessage;
+            searchedArticle = null;
+        }
+        else
+        {
+            searchedArticle = result;
+            ErrorMessage = string.Empty;
+        }
+
+
+        _isAviable = searchedArticle.Status;
+
+        updateArticle = new ArticleDTO
+            {
+                Id = searchedArticle.Id,
+                ArticleNumber = searchedArticle.ArticleNumber,
+                Name = searchedArticle.Name,
+                Description = searchedArticle.Description,
+                Price = searchedArticle.Price,
+                Category = searchedArticle.Category,
+                InOrder = searchedArticle.InOrder,
+                Status = searchedArticle.Status,
+                Stock = searchedArticle.Stock
+            };
+
+        StateHasChanged();
+
+    }
+
+    private async Task Update()
+    {
+        var result = await adminArticleService.GetByIdAsync(searchedArticle.Id);
+
+        if (!string.IsNullOrEmpty(result.ErrorMessage))
+        {
+            await ShowMessage(ErrorMessage = result.ErrorMessage);
+            searchedArticle = null;
+        }
+        else
+        {
+            searchedArticle = result;
+            ErrorMessage = string.Empty;
+        }
+
+        var newUpdatedArticle = new ArticleDTO
+            {
+                Id = searchedArticle.Id,
+                ArticleNumber = searchedArticle.ArticleNumber,
+                Name = updateArticle.Name,
+                Description = updateArticle.Description,
+                Price = updateArticle.Price,
+                Category = updateArticle.Category,
+                InOrder = searchedArticle.InOrder,
+                Status = updateArticle.Status,
+                Stock = updateArticle.Stock
+            };
+
+        await adminArticleService.UpdateAsync(newUpdatedArticle, newUpdatedArticle.ArticleNumber);
+        allArticles.Clear();
+        allArticles.AddRange(await adminArticleService.GetAllAsync());
+        updateArticle = new ArticleDTO();
+        searchedArticle = new ArticleDTO();
+        StateHasChanged();
+    }
+
+    private async Task ShowMessage(string message)
+    {
+        await JSRuntime.InvokeVoidAsync("alert", message);
+    }
+
+
+
+}

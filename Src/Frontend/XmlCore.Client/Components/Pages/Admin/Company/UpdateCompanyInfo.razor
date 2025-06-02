@@ -1,0 +1,270 @@
+﻿@page "/UpdateCompanyInfo"
+@using XmlCore.Client.Services
+@using XmlCore.Shared.DTO
+@using XmlCore.Shared.Interface
+
+@inject IJSRuntime JSRuntime
+
+@inject ICompanyInterface<CompanyDTO> adminCompanyService
+@inject NavigationManager NavigationManager
+@inject UserManager UserManager
+
+
+@rendermode InteractiveServer
+
+<PageTitle>Update Company</PageTitle>
+
+<style>
+   
+
+    .section-margin {
+        margin-top: 10px;
+        margin-bottom: 10px;
+        margin-left: 15px;
+        margin-right: 10px;
+    }
+
+  
+</style>
+
+
+
+
+
+<div class="welcome-Background">
+    <div class="top-row px-4 navTop" style="display: flex; gap: 10px; background-color: transparent;">
+
+        <Button class="glow-green-on-hover" Color="Color.Dark" Type="ButtonType.Submit" Style="color:blueviolet" Size="Size.Default" @onclick="GoBack"> Go Back</Button>
+
+        <Button class="glow-red-on-hover" Color="Color.Dark" Type="ButtonType.Submit" Style="color:blueviolet" Size="Size.Default" @onclick="LogOut"> Logout</Button>
+
+    </div>
+    <div class="row">
+        <div class="col"></div>
+        <div class="col">
+        
+            <section class="section-margin" >
+                <h2>Search for Company to update:</h2>
+                <EditForm FormName="SearchForCompany" Model="selectedCompany.Id" OnSubmit="SelectCompany">
+                    <InputSelect id="SearchForCompany" @bind-Value="selectedCompany.Id" placeholder="Pick Company to update.">
+                        <option value=""></option>
+                        @foreach (var company in companyList)
+                        {
+                            <option value="@company.Id">@company.CompanyName</option>
+                        }
+                    </InputSelect>
+                    <Button Type="ButtonType.Submit" class="glow-on-hover btn-margin">Select</Button>
+
+                </EditForm>
+            </section>
+        
+        </div>
+        <div class="col"></div>
+    </div>
+   
+
+  
+
+
+    <div class="row">
+        <div class="col"></div>
+      
+
+
+
+        <div class="col m-3">
+
+            <section>
+                <EditForm FormName="UpdateCompany" Model="updateCompany" OnValidSubmit="UpdateCompany">
+                    <DataAnnotationsValidator/>
+                    <div>
+                        <label for="companyId">Company Id:</label>
+                        <InputNumber id="companyId" class="form-control" @bind-Value="updateCompany.Id" readonly />
+                    </div>
+
+                    <div>
+                        <label for="companyName">Company Name:</label>
+                        <InputText id="companyName" class="form-control" @bind-Value="updateCompany.CompanyName" placeholder="Put company name here."/>
+                    </div>
+                    <div>
+                        <label for="companyEmail">Email:</label>
+                        <InputText id="companyEmail" class="form-control" @bind-Value="updateCompany.Email" placeholder="Register emailaddress here."/>
+                    </div>
+                    <div>
+                        <label for="companyPassword">Password:</label>
+                        <InputText id="companyPassword" class="form-control" @bind-Value="updateCompany.Password" placeholder="Create Password here."/>
+                    </div>
+                    <div>
+                        <label for="companyPhone">Phone:</label>
+                        <InputText id="companyPhone" class="form-control" @bind-Value="updateCompany.Phone" placeholder="Add Phone number here."/>
+                    </div>
+                    <div>
+                        <label for="companyAddress">Address:</label>
+                        <InputText id="companyAddress" class="form-control" @bind-Value="updateCompany.Address" placeholder="Add Address here."/>
+                    </div>
+                    <div>
+                        <label for="companyCity">City:</label>
+                        <InputText id="companyCity" class="form-control" @bind-Value="updateCompany.City" placeholder="Add City here."/>
+                    </div>
+                    <div>
+                        <label for="companyCountry">Country:</label>
+                        <InputText id="companyCountry" class="form-control" @bind-Value="updateCompany.Country" placeholder="Add Country here."/>
+                    </div>
+                    <Button Type="ButtonType.Submit" class="glow-on-hover btn-margin">Update</Button>
+                </EditForm>
+            </section>
+
+        </div>
+       
+        <div class="col">
+         
+        </div>
+    </div>
+
+
+
+
+
+</div>
+
+
+
+
+
+@code {
+
+    private CompanyDTO updateCompany { get; set; } = new CompanyDTO();
+
+    private CompanyDTO selectedCompany { get; set; } = new CompanyDTO();
+
+    private List<CompanyDTO> companyList { get; set; } = new List<CompanyDTO>();
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        companyList.AddRange(await adminCompanyService.GetAllAsync());
+    }
+
+    #region Button Redirection
+
+    private async void GoBack()
+    {
+
+        MethodToRedirectToSeeAllCompanyPage();
+        StateHasChanged();
+
+    }
+    void MethodToRedirectToSeeAllCompanyPage()
+    {
+        NavigationManager.NavigateTo("/SeeAllCompanies", false);
+        StateHasChanged();
+
+    }
+    private async void LogOut()
+    {
+
+        UserManager.Clear();
+        MethodToRedirectToLogin();
+        StateHasChanged();
+
+    }
+    void MethodToRedirectToLogin()
+    {
+
+        NavigationManager.NavigateTo("/LoginPage", false);
+        StateHasChanged();
+
+    }
+
+    #endregion
+
+
+
+    private async Task SelectCompany()
+    {
+
+        if (selectedCompany.Id == 0)
+        {
+            return;
+        }
+
+
+        var company = await adminCompanyService.GetByIdAsync(selectedCompany.Id);
+
+        if (company is null)
+        {
+            await ShowMessage("No Company with that Id was found.");
+            return;
+        }
+
+        updateCompany = new CompanyDTO
+            {
+                Id = company.Id,
+                CompanyName = company.CompanyName,
+                Email = company.Email,
+                Password = company.Password,
+                Phone = company.Phone,
+                Address = company.Address,
+                City = company.City,
+                Country = company.Country,
+                Orders = company.Orders
+            };
+
+    }
+
+
+    private async Task UpdateCompany()
+    {
+
+        if (updateCompany.Id == 0)
+        {
+            return;
+        }
+
+
+        var companyToUpdate = await adminCompanyService.GetByIdAsync(updateCompany.Id);
+
+        if (companyToUpdate is null)
+        {
+
+            await ShowMessage("No Company with that Id was found.");
+            return;
+
+        }
+
+
+        var updatedCompanyFromUser = new CompanyDTO
+            {
+                Id = companyToUpdate.Id,
+                CompanyName = updateCompany.CompanyName,
+                Email = updateCompany.Email,
+                Password = updateCompany.Password,
+                Phone = updateCompany.Phone,
+                Address = updateCompany.Address,
+                City = updateCompany.City,
+                Country = updateCompany.Country,
+                Orders = companyToUpdate.Orders
+
+            };
+
+        await adminCompanyService.UpdateAsync(updatedCompanyFromUser, updatedCompanyFromUser.Id);
+        companyList.Clear();
+        companyList.AddRange(await adminCompanyService.GetAllAsync());
+        updateCompany = updatedCompanyFromUser;
+        StateHasChanged();
+        await ShowMessage("Company info updated.");
+        updateCompany = new CompanyDTO();
+        selectedCompany = new CompanyDTO();
+
+
+    }
+
+
+    private async Task ShowMessage(string message)
+    {
+        await JSRuntime.InvokeVoidAsync("alert", message);
+    }
+
+    
+}
+

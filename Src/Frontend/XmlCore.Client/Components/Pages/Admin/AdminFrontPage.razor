@@ -1,0 +1,46 @@
+﻿@page "/AdminFrontPage"
+@using XmlCore.Client.Services
+
+@inject NavigationManager NavigationManager
+@inject UserManager UserManager
+
+@rendermode InteractiveServer
+
+<PageTitle>Frontpage</PageTitle>
+
+<div class="welcome-Background">
+    <div class="custom-background">
+        <div class="top-row px-4 navTop" style="display: flex; gap: 10px; background-color: transparent;">
+            
+
+            <Button class="glow-red-on-hover" Color="Color.Dark" Type="ButtonType.Submit" Style="color:blueviolet" Size="Size.Default" @onclick="LogOut"> Logout</Button>
+
+        </div>
+
+       
+    </div>
+</div>
+
+
+
+
+@code {
+
+    private void LogOut()
+    {
+
+        UserManager.Clear();
+        MethodToRedirectToLogin();
+        StateHasChanged();
+
+    }
+    
+    void MethodToRedirectToLogin()
+    {
+
+        NavigationManager.NavigateTo("/LoginPage", false);
+        StateHasChanged();
+
+    }
+    
+}

@@ -1,0 +1,183 @@
+﻿@page "/RegisterCompany"
+@using XmlCore.Client.Services
+@using XmlCore.Shared.DTO
+@using XmlCore.Shared.Interface
+
+
+@inject ICompanyInterface<CompanyDTO> adminCompanyService
+@inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+@inject UserManager UserManager
+
+@rendermode InteractiveServer
+
+<PageTitle>Register</PageTitle>
+
+<div class="welcome-Background">
+
+    <div class="top-row px-4 navTop" style="display: flex; gap: 10px; background-color: transparent;">
+
+        <Button class="glow-green-on-hover" Color="Color.Dark" Type="ButtonType.Submit" Style="color:blueviolet" Size="Size.Default" @onclick="GoBack"> Go Back</Button>
+
+        <Button class="glow-red-on-hover" Color="Color.Dark" Type="ButtonType.Submit" Style="color:blueviolet" Size="Size.Default" @onclick="LogOut"> Logout</Button>
+
+    </div>
+  
+
+    <div class="row">
+       
+        <div class="col"></div>
+        <div class="col m-3">
+            <h3>RegisterCompany</h3>
+            <section>
+                <EditForm FormName="CreateCompany" Model="newCompany" OnValidSubmit="Register">
+                    <DataAnnotationsValidator />
+                    
+                    <div>
+                        <label for="companyName">Company Name:</label>
+                        <InputText id="companyName" class="form-control" @bind-Value="newCompany.CompanyName" placeholder="Put company name here." />
+                    </div>
+                    <div>
+                        <label for="companyEmail">Email:</label>
+                        <InputText id="companyEmail" class="form-control" @bind-Value="newCompany.Email" placeholder="Register emailaddress here." />
+                    </div>
+                    <div>
+                        <label for="companyPassword">Password:</label>
+                        <InputText id="companyPassword" class="form-control" @bind-Value="newCompany.Password" placeholder="Create Password here." />
+                    </div>
+                    <div>
+                        <label for="companyPhone">Phone:</label>
+                        <InputText id="companyPhone" class="form-control" @bind-Value="newCompany.Phone" placeholder="Add Phone number here." />
+                    </div>
+                    <div>
+                        <label for="companyAddress">Address:</label>
+                        <InputText id="companyAddress" class="form-control" @bind-Value="newCompany.Address" placeholder="Add Address here." />
+                    </div>
+                    <div>
+                        <label for="companyCity">City:</label>
+                        <InputText id="companyCity" class="form-control" @bind-Value="newCompany.City" placeholder="Add City here." />
+                    </div>
+                    <div>
+                        <label for="companyCountry">Country:</label>
+                        <InputText id="companyCountry" class="form-control" @bind-Value="newCompany.Country" placeholder="Add Country here." />
+                    </div>
+                    <Button Type="ButtonType.Submit" class="glow-on-hover btn-margin">Register</Button>
+                </EditForm>
+            </section>
+
+        </div>
+
+        <div class="col m-3">
+            <section>
+                <div class="container-sm">
+                    <div class="row">
+                        <h2>Companies</h2>
+                        @foreach (var company in companyList)
+                        {
+                            <div class="col-md-12">
+                                <div class="list-group">
+                                    <li>Company Name: @company.CompanyName</li>
+                                </div>
+                            </div>
+
+                        }
+                    </div>
+                </div>
+            </section>
+        </div>
+
+      
+         
+        
+    </div>
+
+    
+</div>
+
+
+
+@code {
+
+
+
+    private CompanyDTO newCompany { get; set; } = new CompanyDTO();
+    private List<CompanyDTO> companyList { get; set; } = new List<CompanyDTO>();
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        companyList.AddRange(await adminCompanyService.GetAllAsync());
+    }
+
+    #region Button Redirection
+
+    private async void GoBack()
+    {
+
+        MethodToRedirectToSeeAllCompanyPage();
+        StateHasChanged();
+
+    }
+
+    void MethodToRedirectToSeeAllCompanyPage()
+    {
+        NavigationManager.NavigateTo("/SeeAllCompanies", false);
+        StateHasChanged();
+
+    }
+    private async void LogOut()
+    {
+
+        UserManager.Clear();
+        MethodToRedirectToLogin();
+        StateHasChanged();
+
+    }
+
+
+
+
+    void MethodToRedirectToLogin()
+    {
+
+        NavigationManager.NavigateTo("/LoginPage", false);
+        StateHasChanged();
+
+    }
+
+    #endregion
+
+    private async void Register()
+    {
+        if (newCompany is null)
+        {
+            return;
+        }
+
+        if (companyList.Any(c => c.Email.Equals(newCompany.Email)))
+        {
+            await ShowMessage("This Email already exists. Choose another one.");
+            return;
+        }
+
+
+        if (companyList.Any(c => c.CompanyName.ToLower().Equals(newCompany.CompanyName)))
+        {
+            await ShowMessage("This Company name already exists.Choose another one.");
+            return;
+        }
+
+        await adminCompanyService.CreateAsync(newCompany);
+        companyList.Clear();
+        companyList.AddRange(await adminCompanyService.GetAllAsync());
+        newCompany = new CompanyDTO();
+        StateHasChanged();
+
+    }
+
+    private async Task ShowMessage(string message)
+    {
+        await JSRuntime.InvokeVoidAsync("alert", message);
+    }
+}

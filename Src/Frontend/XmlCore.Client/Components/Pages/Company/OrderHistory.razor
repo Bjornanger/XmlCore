@@ -1,0 +1,152 @@
+﻿@page "/OrderHistory"
+@using XmlCore.Client.Services
+@using XmlCore.Shared.DTO
+@using XmlCore.Shared.Entities
+@using XmlCore.Shared.Interface
+
+@inject NavigationManager NavigationManager
+@inject CompanyManager CompanyManager
+@inject ICompanyInterface<CompanyDTO> adminCompanyService
+@inject ICategoryInterface<Category> adminCategoryService
+@inject IOrderInterface<OrderDTO> adminOrderService
+
+
+@rendermode InteractiveServer
+
+<PageTitle>Order History</PageTitle>
+<div class="welcome-Background">
+    <div class="top-row px-4 navTop" style="display: flex; gap: 10px; background-color: transparent;">
+
+        <Button class="bi bi-backspace glow-green-on-hover" Color="Color.Dark" Type="ButtonType.Submit" Style="color:blueviolet" Size="Size.Default" @onclick="GoBack"> Go Back</Button>
+
+        <Button class="bi bi-door-closed glow-red-on-hover" Color="Color.Dark" Type="ButtonType.Submit" Style="color:blueviolet" Size="Size.Default" @onclick="LogOut"> Logout</Button>
+
+    </div>
+    <div class="container">
+
+        <h3 align="center">OrderHistory</h3>
+
+        <div class="row">
+
+            <Virtualize Items="companyOrder">
+                <ItemContent>
+                    @foreach (var company in companyOrder)
+                    {
+                        @foreach (var order in company.Orders)
+                        {
+                            <div class="col-md-3 mx-auto">
+                                <Card class="card-margin card-visual">
+                                    <CardHeader class="card-header">@company.CompanyName</CardHeader>
+                                    <CardBody TextColor="TextColor.Black50" TextWeight="TextWeight.Bold">
+
+                                        <ul>
+
+                                            <li><h5>Ordernumber: @order.OrderNumber</h5></li>
+                                            <hr/>
+                                            <li>Order Date: @order.DateOfOrder</li>
+
+                                            <ul>
+                                                @foreach (var ooa in order.ArticlesInOrderList)
+                                                {
+
+                                                    var category = categoryList.FirstOrDefault(a => a.Id == @ooa.Article.Category);
+
+
+                                                    <li>Name: @ooa.Article.Name</li>
+                                                    <li>Article Number: @ooa.Article.ArticleNumber</li>
+                                                    <li>Category: @category.Name</li>
+                                                    <li>Description:@ooa.Article.Description</li>
+                                                    <li>Quantity:@ooa.Amount St</li>
+                                                    <li>Price $:@ooa.Article.Price</li>
+                                                    <Divider/>
+                                                }
+
+                                            </ul>
+                                            <li>Order Sum $: @order.TotalSum</li>
+                                            <Divider/>
+                                        </ul>
+                                    </CardBody>
+                                </Card>
+                            </div>
+                        }
+
+                    }
+                </ItemContent>
+            </Virtualize>
+
+
+        </div>
+    </div>
+</div>
+
+
+
+
+@code {
+
+
+    private List<OrderDTO> orderList { get; set; } = new List<OrderDTO>();
+    private List<CompanyDTO> companyList { get; set; } = new List<CompanyDTO>();
+    private List<Category> categoryList { get; set; } = new List<Category>();
+
+
+    private CompanyDTO companyToShow { get; set; } = new CompanyDTO();
+    private List<CompanyDTO> companyOrder { get; set; } = new List<CompanyDTO>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        orderList.AddRange(await adminOrderService.GetAllAsync());
+        companyList.AddRange(await adminCompanyService.GetAllAsync());
+        categoryList.AddRange(await adminCategoryService.GetAllAsync());
+
+
+        companyToShow = CompanyManager.Get();
+        companyOrder.Clear();
+        var ordersFromSelectedCompany = await adminCompanyService.GetAllOrdersForCompany(companyToShow.Id);
+        companyOrder.Add(ordersFromSelectedCompany);
+        StateHasChanged();
+
+    }
+
+    #region Button Redirection
+
+    private async void GoBack()
+    {
+
+        MethodToRedirectToProfilePage();
+        StateHasChanged();
+
+    }
+
+    void MethodToRedirectToProfilePage()
+    {
+        NavigationManager.NavigateTo("/ProfilePage", false);
+        StateHasChanged();
+
+    }
+
+
+    private async void LogOut()
+    {
+
+        CompanyManager.Clear();
+        MethodToRedirectToLogin();
+        StateHasChanged();
+
+    }
+
+
+
+
+    void MethodToRedirectToLogin()
+    {
+
+        NavigationManager.NavigateTo("/LoginPage", false);
+        StateHasChanged();
+
+    }
+
+    #endregion
+
+    
+}

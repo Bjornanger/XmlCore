@@ -1,0 +1,260 @@
+﻿@page "/"
+@rendermode InteractiveServer
+
+
+<PageTitle>Home</PageTitle>
+
+<style>  
+
+    .card {
+        background: transparent;
+        border-radius: 30px;
+        padding: 1em;
+        margin-top: 60px;
+        margin-bottom: 20px;
+        margin-left: 20px;
+        margin-right: 20px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        opacity: 0.85; 
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+        .card:hover {
+            transform: scale(1.05); 
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+
+   
+          .card-title h1 {
+        font-size: 1.5em;
+        margin-bottom: 0.5em;      
+        font-weight: 600;
+    }
+
+    .card-image img {
+        margin-top:30px;
+        width: 40%;
+        border-radius: 8px;
+    }
+
+    .card-body p {
+        font-size: 1.2em;
+        margin: 1em 0;
+    }
+
+    .card-footer button {
+        padding: 0.5em 1em;
+        font-size: 1em;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+        .card-footer button:hover {
+            background-color: #0056b3;
+        }
+
+    .card-toggle {
+        background:transparent;
+        
+        opacity: 0.85;
+    }
+
+    .card-toggle-body {
+        background-color: white;
+        border-radius: 10px;
+        opacity: 0.85;
+    }
+
+ 
+
+   
+ 
+
+    figure {
+        width: 500px;
+        aspect-ratio: 8 / 5;
+        --bg: hsl(330 80% calc(90% - (var(--hover) * 10%)));
+        --accent: hsl(280 80% 40%);
+        transition: background 0.2s;
+        background: radial-gradient(circle at top left, var(--accent), transparent 75%), var(--bg);
+        margin: 0;
+        position: relative;
+        overflow: hidden;
+        border-radius: 1.5rem;
+    }
+
+        figure:after {
+            content: "";
+            position: absolute;
+            width: 20%;
+            aspect-ratio: 1;
+            border-radius: 50%;
+            bottom: 0%;
+            left: 10%;
+            background: linear-gradient(-65deg, var(--bg) 50%, var(--accent) 50%);
+            filter: blur(25px);
+            transform: translateX(calc(var(--hover) * 15%)) scale(calc(1 + (var(--hover) * 0.2)));
+            transition: transform 0.2s, background 0.2s;
+        }
+
+
+
+    article {
+        --hover: 0;
+    }
+
+        article:hover {
+            --hover: 1;
+        }
+
+
+
+    
+
+</style>
+
+
+
+<div class="welcome-Background">
+    
+    
+
+    <div class="row">
+        <div class="col"></div>
+      
+        <div class="col">
+
+            <div class="card">
+                <div class="card-title">
+                    <h1>WELCOME TO US AT</h1>
+                </div>
+                <article>
+                    <figure>
+                        <div class="card-body">
+                            <div class="card-image">
+                                <img src="Images/cgi.Background.jpg" alt="signaturePic"/>
+                            </div>
+                        </div>
+                    </figure>
+                    
+                </article>
+               
+
+
+            </div>
+        </div>
+        <div class="col"></div>
+    </div>
+
+
+    <div class="row">
+        <div class="col">
+            <Card class="card-toggle">
+                <CardTitle>
+                    <Button class="glow-on-hover" @onclick="ToggleCard1">BOLD & BRAVE</Button>
+                </CardTitle>
+
+                @if (showCard1)
+                {
+                    <CardBody class="card-toggle-body" TextColor="TextColor.Dark" TextWeight="TextWeight.Bold">
+                        At the heart of every great achievement lies the courage to take risks, to venture into the unknown with a fearless spirit.
+                    </CardBody>
+                }
+
+
+            </Card>
+        </div>
+
+        <div class="col">
+            <Card class="card-toggle">
+                <CardTitle>
+                    <Button class="glow-on-hover" @onclick="ToggleCard2">INNOVATIVE</Button>
+                </CardTitle>
+                @if (showCard2)
+                {
+                    <CardBody Class="card-toggle-body" TextColor="TextColor.Dark" TextWeight="TextWeight.Bold">
+                        Embracing the power of creativity, we transform challenges into opportunities, crafting solutions that are not just new, but groundbreaking.
+                    </CardBody>
+                }
+
+            </Card>
+        </div>
+
+        <div class="col">
+            <Card class="card-toggle">
+                <CardTitle>
+                    <Button class="glow-on-hover" @onclick="ToggleCard3">KNOWLEDGE</Button>
+                </CardTitle>
+                @if (showCard3)
+                {
+                    <CardBody class="card-toggle-body" TextColor="TextColor.Dark" TextWeight="TextWeight.Bold">
+                        Driven by relentless curiosity, we push the boundaries of what’s possible, staying ahead with the latest insights and expertise.
+                    </CardBody>
+                }
+
+            </Card>
+        </div>
+
+
+        <div class="col">
+            <Card class="card-toggle">
+                <CardTitle>
+                    <Button class="glow-on-hover" @onclick="ToggleCard4">LOGISTICS</Button>
+                </CardTitle>
+                @if (showCard4)
+                {
+                    <CardBody class="card-toggle-body" TextColor="TextColor.Dark" TextWeight="TextWeight.Bold">
+                        Like a maestro orchestrating a symphony, our logistics prowess ensures that every piece falls perfectly into place, delivering seamless efficiency and unparalleled precision.
+                    </CardBody>
+                }
+
+            </Card>
+        </div>
+
+
+
+
+
+
+    </div>
+
+
+</div>
+
+
+
+@code {
+
+    private bool showCard1 = false;
+    private bool showCard2 = false;
+    private bool showCard3 = false;
+    private bool showCard4 = false;
+
+
+    private void ToggleCard1()
+    {
+        showCard1 = !showCard1;
+    }
+
+    private void ToggleCard2()
+    {
+        showCard2 = !showCard2;
+    }
+    private void ToggleCard3()
+    {
+        showCard3 = !showCard3;
+    }
+    private void ToggleCard4()
+    {
+        showCard4 = !showCard4;
+    }
+}
+
+
+
+
+

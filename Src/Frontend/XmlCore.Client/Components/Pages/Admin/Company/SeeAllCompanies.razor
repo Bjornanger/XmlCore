@@ -1,0 +1,154 @@
+﻿@page "/SeeAllCompanies"
+@using XmlCore.Client.Services
+@using XmlCore.Shared.DTO
+@using XmlCore.Shared.Interface
+
+
+@inject ICompanyInterface<CompanyDTO> adminCompanyService
+@inject NavigationManager NavigationManager
+@inject UserManager UserManager
+
+
+@rendermode InteractiveServer
+
+<PageTitle>Companies</PageTitle>
+
+<style>
+      
+    
+
+    .card-margin {
+        margin-bottom: 10px;
+        margin-left: 10px;
+        margin-right: 10px;
+        margin-top: 10px;
+    }
+
+    .card-visual {
+        border-radius: 20px;
+        border: 1px solid;
+        border-color: black;
+        opacity: 0.90;
+        background: #fff;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        transition: transform 0.3s, box-shadow 0.3s;
+        overflow: hidden;
+    }
+
+    .card-header {
+        background: black;
+        opacity: 0.85;
+        color: white;
+        padding: 1em;
+        font-size: 1em;
+        text-align: center;
+        font-weight: bold;
+    }
+</style>
+
+
+<div class="welcome-Background">
+    <div class="top-row px-4 navTop" style="display: flex; gap: 10px; background-color: transparent;">
+    
+
+    
+        <Button class="glow-on-hover" Color="Color.Dark" Style="color:blueviolet" Type="ButtonType.Link" To="/RegisterCompany">Register Company</Button>
+
+        <Button class="glow-on-hover" Color="Color.Dark" Style="color:blueviolet" Type="ButtonType.Link" To="/UpdateCompanyInfo">Update Company</Button>
+
+        <Button class="glow-on-hover" Color="Color.Dark" Style="color:blueviolet" Type="ButtonType.Link" To="/OrdersInCompany">See Company orders</Button>
+
+        <Button class="glow-green-on-hover" Color="Color.Dark" Type="ButtonType.Submit" Style="color:blueviolet" Size="Size.Default" @onclick="GoBack"> Go Back</Button>
+
+        <Button class="glow-red-on-hover" Color="Color.Dark" Type="ButtonType.Submit" Style="color:blueviolet" Size="Size.Default" @onclick="LogOut"> Logout</Button>
+
+    </div>
+    
+
+    <div class="container-sm">
+        <div class="row">
+            <div class="col-md-8">
+                <div class="row">
+
+
+                    @foreach (var company in companiesList)
+                    {
+                        <div class="col-md-4">
+
+                            <Card class="card-visual card-margin">
+
+                                <CardHeader class="card-header">@company.CompanyName</CardHeader>
+                                <CardBody TextColor="TextColor.Black50" TextWeight="TextWeight.Bold">
+                                    <ul class="list-unstyled mt-3 mb-4">
+                                        <li>Email: @company.Email</li>
+                                        <li>Password: @company.Password</li>
+                                        <li>Phone: @company.Phone</li>
+                                        <li>Address: @company.Address</li>
+                                        <li>City: @company.City</li>
+                                        <li>Country: @company.Country</li>
+                                    </ul>
+                                </CardBody>
+                            </Card>
+                        </div>
+                    }
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+
+
+
+@code {
+
+    private List<CompanyDTO> companiesList { get; set; } = new List<CompanyDTO>();
+
+    
+    protected override async Task OnInitializedAsync()
+    {
+        companiesList.AddRange(await adminCompanyService.GetAllAsync());
+    }
+
+    #region Button Redirection
+
+    private async void GoBack()
+    {
+
+        MethodToRedirectToAdminFrontPage();
+        StateHasChanged();
+
+    }
+
+    void MethodToRedirectToAdminFrontPage()
+    {
+        NavigationManager.NavigateTo("/AdminFrontPage", false);
+        StateHasChanged();
+
+    }
+    private async void LogOut()
+    {
+
+        UserManager.Clear();
+        MethodToRedirectToLogin();
+        StateHasChanged();
+
+    }
+    
+
+    void MethodToRedirectToLogin()
+    {
+
+        NavigationManager.NavigateTo("/LoginPage", false);
+        StateHasChanged();
+
+    }
+
+    #endregion
+    
+}

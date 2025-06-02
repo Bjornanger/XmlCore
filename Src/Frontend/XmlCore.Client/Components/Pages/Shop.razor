@@ -1,0 +1,397 @@
+﻿@page "/Shop"
+
+@using Blazorise
+@using Blazorise.Bootstrap5
+@using Blazorise.Icons.FontAwesome
+@using XmlCore.Client.Services
+@using XmlCore.Shared.DTO
+@using XmlCore.Shared.Entities
+@using XmlCore.Shared.Interface
+@inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+@inject IArticleInterface<ArticleDTO> adminArticleService
+@inject ICategoryInterface<Category> adminCategoryService
+@inject IArticlesInOrderInterface<ArticlesInOrderDTO> adminaIoService
+@inject ICompanyInterface<CompanyDTO> adminCompanyService
+@inject IOrderInterface<OrderDTO> adminOrderService
+@inject CompanyManager companyManager
+
+
+
+@rendermode InteractiveServer
+
+<PageTitle>Shop</PageTitle>
+
+<style>
+  
+
+         
+
+    .normal-button {
+        width: 60px;
+        height: 40px;
+       
+    }
+
+    .normal-remove {
+        width: 70px;
+        height: 40px;
+    }
+
+    .shopping-cart {
+        border-radius: 50px;
+        margin-top:10px;
+    }
+   
+</style>
+
+
+
+
+<div class="welcome-Background">
+    
+    <div class="top-row px-4 navTop" style="display: flex; gap: 10px; background-color: transparent;">
+
+        <Button class="glow-green-on-hover" Color="Color.Dark" Type="ButtonType.Submit" Style="color:blueviolet" Size="Size.Default" @onclick="GoBack"> Go Back</Button>
+
+        <Button class="glow-red-on-hover" Color="Color.Dark" Type="ButtonType.Submit" Style="color:blueviolet" Size="Size.Default" @onclick="LogOut"> Logout</Button>
+
+    </div>
+
+
+    <div class="container">
+        <div class="row">
+            <div class="col-md-8">
+
+                
+
+                <div class="row">
+
+                    @foreach (var article in shoppingList)
+                    {
+                        var category = categoryList.FirstOrDefault(c => c.Id == article.Category);
+                        <div class="col-md-4 mb-4">
+
+                            <Card class="card-margin card-visual">
+                                <CardHeader class="card-header">@article.Name</CardHeader>
+                                <CardBody TextColor="TextColor.Black50" TextWeight="TextWeight.Bold">
+                                    <li>Articlenumber: @article.ArticleNumber</li>
+                                    <li>Category: @category.Name</li>
+                                    <li>Description: @article.Description</li>
+                                    <li>Price $:@article.Price</li>
+                                </CardBody>
+                                <Button Type="ButtonType.Submit" class="normal-button d-grid gap-2 col-4 mx-auto glow-green-on-hover btn-margin" Margin="Margin.Is2.FromTop" Size="Size.Small"
+                                        @onclick="() => AddToCart(article)" TextWeight="TextWeight.Bold" TextColor="TextColor.Success">
+                                    Add
+                                </Button>
+                            </Card>
+                        </div>
+
+
+                    }
+
+                </div>
+
+            </div>
+
+
+            <div class="col-md-4">
+
+                <Card class="card-margin card-visual shopping-cart" Background="Background.Dark" TextColor="TextColor.White">
+
+                    <CardHeader class="card-header">Shopping Cart for @companyManager.Company?.CompanyName </CardHeader>
+
+
+
+                    <CardBody TextColor="TextColor.Black50" TextWeight="TextWeight.Bold">
+                        <ul class="list-group">
+                            @foreach (var article in cartItem.ListOfArticles)
+                            {
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <li class="list-group-item">
+                                    <div class="row">
+                                        <div class="col-md-6">@article.Name</div>
+                                        <div class="col-md-3">$@article.Price</div>
+                                        <div class="col-md-3">@article.Quantity st</div>
+
+                                        <div class="col-md-3">
+                                            <Button Size="Size.Small" class="normal-remove d-grid gap-2 col-4 mx-auto glow-red-on-hover" @onclick="() => Remove(article)" TextWeight="TextWeight.Bold" TextColor="TextColor.Danger">Remove</Button>
+                                        </div>
+                                    </div>
+                                </li>
+                                </li>
+                            }
+                        </ul>
+                        <li>
+                            <CardFooter TextAlignment="TextAlignment.Center" TextColor="TextColor.White">$ @cartItem.CartTotal</CardFooter>
+
+                        </li>
+                        <div class="mt-3">
+                            <Button Type="ButtonType.Submit" class="glow-on-hover" @onclick="Checkout" TextWeight="TextWeight.Bold" TextColor="TextColor.Warning">Checkout</Button>
+                        </div>
+                    </CardBody>
+                </Card>
+            </div>
+        </div>
+
+    </div>
+
+
+
+</div>
+
+
+
+@code {
+
+
+    //DTO-Lists
+    private List<Category> categoryList { get; set; } = new List<Category>();
+    private List<ArticleDTO> articleList { get; set; } = new List<ArticleDTO>();
+    private List<CompanyDTO> companyList { get; set; } = new List<CompanyDTO>();
+    private List<ArticlesInOrderDTO> aIoList { get; set; } = new List<ArticlesInOrderDTO>();
+
+    //DTO
+    private CompanyDTO companyOnline { get; set; } = new CompanyDTO();
+
+
+    //Cart
+    private Cart cartItem { get; set; } = new Cart();
+
+    private List<ArticleDTO> shoppingList { get; set; } = new List<ArticleDTO>();
+
+
+    
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        categoryList.AddRange(await adminCategoryService.GetAllAsync());
+        articleList.AddRange(await adminArticleService.GetAllAsync());
+        companyList.AddRange(await adminCompanyService.GetAllAsync());
+        aIoList.AddRange(await adminaIoService.GetAllAsync());
+        companyOnline = companyManager.Get();
+
+        //Filter Articles to not show the ones Not Available 
+        foreach (var item in articleList)
+        {
+            if (item.Status == true)
+            {
+                shoppingList.Add(item);
+            }
+        }
+
+
+    }
+    
+  
+
+    private async void GoBack()
+    {
+
+        MethodToRedirectToProfilePage();
+        StateHasChanged();
+
+    }
+
+    void MethodToRedirectToProfilePage()
+    {
+        NavigationManager.NavigateTo("/ProfilePage", false);
+        StateHasChanged();
+
+    }
+
+
+    private async void LogOut()
+    {
+        cartItem.ListOfArticles.Clear();
+        companyManager.Clear();
+        MethodToRedirectToLogin();
+        StateHasChanged();
+
+    }
+
+
+    void MethodToRedirectToLogin()
+    {
+
+        NavigationManager.NavigateTo("/LoginPage", false);
+        StateHasChanged();
+
+    }
+
+    private async Task AddToCart(ArticleDTO articleFromCart)
+    {
+
+        if (articleFromCart is null)
+        {
+            return;
+        }
+
+
+
+        var existingArticle = cartItem.ListOfArticles.FirstOrDefault(a => a.Name.ToLower() == articleFromCart.Name.ToLower());
+
+        if (existingArticle is null)
+        {
+            cartItem.ListOfArticles.Add(articleFromCart);
+            articleFromCart.Quantity = 1;
+        }
+        else
+        {
+            existingArticle.Quantity++;
+        }
+
+    }
+
+    private async Task Remove(ArticleDTO articleFromCart)
+    {
+
+        if (articleFromCart is null)
+        {
+            return;
+        }
+
+        var productToRemove = cartItem.ListOfArticles.FirstOrDefault(a => a.Name.ToLower() == articleFromCart.Name.ToLower());
+
+        if (productToRemove != null)
+        {
+
+            if (productToRemove.Quantity > 1)
+            {
+                productToRemove.Quantity--;
+            }
+            else
+            {
+                cartItem.ListOfArticles.Remove(productToRemove);
+
+            }
+        }
+
+
+    }
+
+
+    private void Checkout()
+    {
+        
+        var companyShopping = companyManager.Get();
+
+
+        if (companyShopping is null)
+        {
+            return;
+        }
+
+        if (cartItem.ListOfArticles.Count == 0)
+        {
+            
+            ShowMessage("No Articles in your cart");
+            return;
+        }
+
+
+        var articleInCart = new List<ArticleDTO>();
+        List<ArticlesInOrderDTO> aIoListForCart = new List<ArticlesInOrderDTO>();
+
+
+        foreach (var cartArticle in cartItem.ListOfArticles)
+        {
+            var articleExist = shoppingList.Any(a => a.Name.ToLower() == cartArticle.Name.ToLower());
+
+            if (articleExist)
+            {
+                var artToRegister = new ArticleDTO
+                    {
+                        Id = cartArticle.Id,
+                        ArticleNumber = cartArticle.ArticleNumber,
+                        Name = cartArticle.Name,
+                        Description = cartArticle.Description,
+                        Price = cartArticle.Price,
+                        Category = cartArticle.Category,
+                        Quantity = cartArticle.Quantity,
+                        Status = cartArticle.Status,
+                        Stock = cartArticle.Stock
+                    };
+                articleInCart.Add(artToRegister);
+            }
+            else if (!articleExist)
+            {
+                return;
+            }
+        }
+
+
+
+
+        foreach (var article in articleInCart)
+        {
+            var articlesInOrder = new ArticlesInOrderDTO
+                {
+
+                    Article = article,
+                    Order = null,
+                    Amount = article.Quantity
+                };
+            aIoListForCart.Add(articlesInOrder);
+        }
+
+
+
+
+        var newOrder = new OrderDTO
+            {
+
+                Company = new CompanyDTO
+                {
+                    Id = companyShopping.Id,
+                    CompanyName = companyShopping.CompanyName,
+                    Email = companyShopping.Email,
+                    Password = companyShopping.Password,
+                    Phone = companyShopping.Phone,
+                    Address = companyShopping.Address,
+                    City = companyShopping.City,
+                    Country = companyShopping.Country,
+                    Orders = null
+                },
+                TotalSum = cartItem.CartTotal,
+                DateOfOrder = DateTime.Now,
+                ArticlesInOrderList = aIoListForCart.ToList()
+
+            };
+
+        adminOrderService.CreateAsync(newOrder);
+
+        cartItem.ListOfArticles.Clear();
+        ShowMessage("Order confirmed.");
+        StateHasChanged();
+
+    }
+
+
+
+    public class Cart
+    {
+        public string Name { get; set; }
+
+        public double Price { get; set; }
+
+        public int CartAmount => ListOfArticles.Count;
+
+        public double CartTotal => ListOfArticles.Sum(a => a.Price * a.Quantity);
+
+
+        public int CompanyId { get; set; }
+
+        public List<ArticleDTO> ListOfArticles { get; set; } = new List<ArticleDTO>();
+    }
+
+
+    private async Task ShowMessage(string message)
+    {
+        await JSRuntime.InvokeVoidAsync("alert", message);
+    }
+
+
+}

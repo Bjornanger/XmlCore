@@ -1,0 +1,126 @@
+﻿@page "/SeeAllArticles"
+@using XmlCore.Client.Services
+@using XmlCore.Shared.DTO
+@using XmlCore.Shared.Entities
+@using XmlCore.Shared.Interface
+
+@inject IArticleInterface<ArticleDTO> adminArticleService
+@inject ICategoryInterface<Category> adminCategoryService
+@inject NavigationManager NavigationManager
+@inject UserManager UserManager
+
+@rendermode InteractiveServer
+
+<PageTitle>Articles</PageTitle>
+
+<div class="welcome-Background">
+    
+    <div class="top-row px-4 navTop" style="display: flex; gap: 10px; background-color: transparent;">
+    
+        <Button class="glow-on-hover" Color="Color.Dark" Type="ButtonType.Link" Style="color:blueviolet" To="/CreateArticle">Create Article</Button>
+
+        <Button class="glow-on-hover" Color="Color.Dark" Type="ButtonType.Link" Style="color:blueviolet" To="/UpdateArticle">Update Articles</Button>
+
+        <Button class="glow-on-hover" Color="Color.Dark" Type="ButtonType.Link" Style="color:blueviolet" To="/SearchForArticleInOrders">Search For Article In Orders</Button>
+
+        <Button class="glow-green-on-hover" Color="Color.Dark" Type="ButtonType.Submit" Style="color:blueviolet" Size="Size.Default" @onclick="GoBack"> Go Back</Button>
+
+        <Button class="glow-red-on-hover" Color="Color.Dark" Type="ButtonType.Submit" Style="color:blueviolet" Size="Size.Default" @onclick="LogOut"> Logout</Button>
+
+    </div>
+   
+        <div class="container">
+
+            <div class="row m-4">
+
+                @foreach (var article in allArticles)
+                {
+                    var category = allCategories.FirstOrDefault(c => c.Id == article.Category);
+                var statusText = article.Status ? "Available" : "Not Available ";
+
+                    <div class="col-md-3">
+                    <Card class="card-margin card-visual">
+                            <CardHeader class="card-header">@article.Name</CardHeader>
+
+                            <CardBody TextColor="TextColor.Black50" TextWeight="TextWeight.Bold">
+                                <ul class="list-unstyled mb-6">
+                                    <li>ArticleNumber: @article.ArticleNumber</li>
+                                    <li>Category: @category.Name</li>
+                                    <li>Description: @article.Description</li>
+                                    <li>Price $:@article.Price</li>
+                                    <li>Sales status: @statusText</li>
+                                    <li>Stock: @article.Stock</li>
+
+                                </ul>
+                            </CardBody>
+
+                        </Card>
+                    </div>
+                }
+            </div>
+        </div>
+    
+    
+
+
+
+</div>
+
+
+
+
+
+@code {
+
+    private List<ArticleDTO> allArticles { get; } = new List<ArticleDTO>();
+    private List<Category> allCategories { get; } = new List<Category>();
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        allArticles.AddRange(await adminArticleService.GetAllAsync());
+        allCategories.AddRange(await adminCategoryService.GetAllAsync());
+        
+    }
+
+    #region Button Redirection
+
+    private async void GoBack()
+    {
+
+        MethodToRedirectToAdminFrontPage();
+        StateHasChanged();
+
+    }
+
+    void MethodToRedirectToAdminFrontPage()
+    {
+        NavigationManager.NavigateTo("/AdminFrontPage", false);
+        StateHasChanged();
+
+    }
+    private async void LogOut()
+    {
+
+        UserManager.Clear();
+        MethodToRedirectToLogin();
+        StateHasChanged();
+
+    }
+
+
+
+
+    void MethodToRedirectToLogin()
+    {
+
+        NavigationManager.NavigateTo("/LoginPage", false);
+        StateHasChanged();
+
+    }
+
+    #endregion
+
+   
+}

@@ -1,0 +1,792 @@
+﻿@page "/OrderPage"
+@using System.Xml.Serialization
+@using XmlCore.Client.Services
+@using XmlCore.Shared.DTO
+@using XmlCore.Shared.Entities
+@using XmlCore.Shared.Interface
+@using XmlCore.Shared.XmlDTO
+
+@inject IJSRuntime JsRuntime
+@inject IOrderInterface<OrderDTO> adminOrderService
+@inject ICompanyInterface<CompanyDTO> adminCompanyService
+@inject ICategoryInterface<Category> adminCategoryService
+@inject IArticleInterface<ArticleDTO> adminArticleService
+
+@inject IConfiguration config
+
+@inject NavigationManager NavigationManager
+@inject UserManager UserManager
+
+@rendermode InteractiveServer
+
+
+
+<PageTitle>Orders</PageTitle>
+
+
+
+<div class="welcome-Background">
+    <div class="top-row px-4 navTop" style="display: flex; gap: 10px; background-color: transparent;">
+
+        <Button class=" glow-green-on-hover" Color="Color.Dark" Type="ButtonType.Submit" Style="color:blueviolet" Size="Size.Default" @onclick="GoBack"> Go Back</Button>
+
+        <Button class=" glow-red-on-hover" Color="Color.Dark" Type="ButtonType.Submit" Style="color:blueviolet" Size="Size.Default" @onclick="LogOut"> Logout</Button>
+
+    </div>
+    <div class="row">
+        <div class="col">
+            <h3>XML OrderHandler</h3>
+            
+            <EditForm Model="newOrderFromXml" OnValidSubmit="SubmitForm">
+                <Div>
+
+                    <InputFile id="uploadFile" OnChange="@LoadFiles" class="form-control" accept=".xml" />
+                </Div>
+                <Button Type="ButtonType.Submit" class="glow-on-hover btn-margin">Upload XML</Button>
+
+            </EditForm>
+
+            <h3>Uploaded Order:</h3>
+
+            <div class="container">
+                <div class="row">
+
+                    @foreach (var order in lastOrder)
+                    {
+                        var company = companyList.FirstOrDefault(c => c.Id == order.Company.Id);
+                        if (company != null)
+                        {
+                            <div class="col">
+                                <Card class="card-margin card-visual">
+
+                                    <CardBody TextColor="TextColor.Black50" TextWeight="TextWeight.Bold">
+                                        <ul class="list-unstyled mt-3 mb-4">
+                                            <li>Company: @company.CompanyName</li>
+                                            <li>Email: @company.Email</li>
+                                            <li>Password: @company.Password</li>
+                                            <li>Phone: @company.Phone</li>
+                                            <li>Address: @company.Address</li>
+                                            <li>City: @company.City</li>
+                                            <li>Country: @company.Country</li>
+
+                                            <Divider />
+
+                                            <li>Ordernumber: @order.OrderNumber</li>
+                                            <li>Date: @order.DateOfOrder</li>
+                                            <Divider/>
+                                            @foreach (var aio in order.ArticlesInOrderList)
+                                            {
+                                                var category = categoryList.FirstOrDefault(c => c.Id == aio.Article.Category);
+                                                if (category != null)
+                                                {
+                                                    <ul>
+                                                        <li>Name: @aio.Article.Name</li>
+                                                        <li>ArticleNumber: @aio.Article.ArticleNumber</li>
+                                                        <li>Category: @category.Name</li>
+                                                        <li>Description: @aio.Article.Description</li>
+                                                        <li>Price $: @aio.Article.Price</li>
+                                                        <li>Quantity : @aio.Amount St</li>
+                                                    </ul>
+                                                   
+                                                }
+                                                <Divider />
+                                            }
+                                            <li>Total sum $: @order.TotalSum</li>
+                                        </ul>
+                                    </CardBody>
+                                </Card>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+            
+            
+            
+
+        </div>
+        <div class="col">
+            <h3>All Orders</h3>
+            <Button class="glow-on-hover btn-margin" @onclick="ToggleCard">Show Orders</Button>
+
+            @if (showCard)
+            {
+                @foreach (var orders in orderList)
+                {
+
+
+                    var company = companyList.FirstOrDefault(c => c.Id == orders.Company.Id);
+                    if (company != null)
+                    {
+
+                        <div class="col-md-6">
+                            <Card class="card-margin card-visual" Style="width: 18rem">
+                                <CardHeader class="card-header">Ordernumber: @orders.OrderNumber</CardHeader>
+                                <CardBody TextColor="TextColor.Black50" TextWeight="TextWeight.Bold">
+                                    <ul class="list-unstyled mt-3 mb-4">
+                                        <li>Company: @company.CompanyName</li>
+                                        <li>Date: @orders.DateOfOrder</li>
+                                        <Divider/>
+                                        @foreach (var aio in orders.ArticlesInOrderList)
+                                        {
+                                            var category = categoryList.FirstOrDefault(c => c.Id == aio.Article.Category);
+                                            if (category != null)
+                                            {
+                                                <ul>
+                                                    <li>ArticleNumber: @aio.Article.ArticleNumber</li>
+                                                    <li>Name: @aio.Article.Name</li>
+                                                    <li>Category: @category.Name</li>
+                                                    <li>Description: @aio.Article.Description</li>
+                                                    <li>Quantity : @aio.Amount St</li>
+                                                    <li>Price $: @aio.Article.Price</li>
+                                                   
+                                                    
+                                                </ul>
+                                                <Divider/>
+                                            }
+                                           
+                                        }
+                                       
+                                        <li>Total sum $: @orders.TotalSum</li>
+                                       
+                                       
+                                    </ul>
+                                </CardBody>
+                            </Card>
+                        </div>
+                    }
+                }
+
+            }
+          
+        </div>
+        <div class="col">
+            <h3>Searched:</h3>
+            <EditForm FormName="SearchOrder" Model="searchOrderByNumber" OnValidSubmit="SearchOrderByNumber">
+                <Div>
+                    <InputSelect id="searchOrder" placeholder="Input Ordernumber here." @bind-Value="searchOrderByNumber.OrderNumber">
+                        <option value="">Choose Order here</option>
+                        @foreach (var order in orderList)
+                        {
+                            <option value="@order.OrderNumber">@order.OrderNumber</option>
+                        }
+                    </InputSelect>
+                    
+                </Div>
+                <Button Type="ButtonType.Submit" class="glow-on-hover btn-margin">Search</Button>
+            </EditForm>
+            <div>
+                @foreach (var orderToExport in searchedOrder)
+                {
+                    var company = companyList.FirstOrDefault(c => c.Id == orderToExport.Company.Id);
+                    if (company != null)
+                    {
+                        <div class="col-md-10">
+                            <Card class="card-margin card-visual">
+                                <CardHeader class="card-header">@company.CompanyName</CardHeader>
+                                <CardBody TextColor="TextColor.Black50" TextWeight="TextWeight.Bold">
+                                    <ul class="list-unstyled mt-3 mb-4">
+                                       
+                                        <li>Email: @company.Email</li>
+                                        <li>Password: @company.Password</li>
+                                        <li>Phone: @company.Phone</li>
+                                        <li>Address: @company.Address</li>
+                                        <li>City: @company.City</li>
+                                        <li>Country: @company.Country</li>
+
+                                        <Divider/>
+
+                                        <li>Ordernumber: @orderToExport.OrderNumber</li>
+                                        <li>Date: @orderToExport.DateOfOrder</li>
+                                        <Divider />
+                                        @foreach (var aio in orderToExport.ArticlesInOrderList)
+                                        {
+                                            var category = categoryList.FirstOrDefault(c => c.Id == aio.Article.Category);
+                                            if (category != null)
+                                            {
+                                                <ul>
+                                                    <li>Name: @aio.Article.Name</li>
+                                                    <li>ArticleNumber: @aio.Article.ArticleNumber</li>
+                                                    <li>Category: @category.Name</li>
+                                                    <li>Description: @aio.Article.Description</li>
+                                                    <li>Price $: @aio.Article.Price</li>
+                                                    <li>Quantity : @aio.Amount St</li>
+                                                </ul>
+                                                <Divider />
+                                            }
+
+                                            
+                                        }
+                                        
+                                        <li>Total sum $: @orderToExport.TotalSum</li>
+                                    </ul>
+                                    <CardFooter Background="Background.Body">
+                                        <Button Type="ButtonType.Submit" class="glow-on-hover btn-margin mx-auto" @onclick="() => SendToXML(orderToExport)" VerticalAlignment="VerticalAlignment.Middle" > Export to XML</Button>
+                                    </CardFooter>
+                                </CardBody>
+                            </Card>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+
+    </div>
+</div>
+
+
+
+@if (errors.Count > 0)
+{
+    <h2>Errors</h2>
+    <ul class="text-danger">
+        @foreach (var error in errors)
+        {
+            <li>@error</li>
+        }
+
+    </ul>
+}
+
+
+@code {
+
+    //LISTOR från DB
+    private List<OrderDTO> orderList { get; set; } = new List<OrderDTO>();
+    private List<OrderDTO> searchedOrder { get; set; } = new List<OrderDTO>();
+    private List<OrderDTO> lastOrder { get; set; } = new List<OrderDTO>();
+
+    private List<CompanyDTO> companyList { get; set; } = new List<CompanyDTO>();
+    private List<Category> categoryList { get; set; } = new List<Category>();
+    private List<ArticleDTO> articleList { get; set; } = new List<ArticleDTO>();
+
+    //Upload File
+    private long maxFileSize = 1024 * 1024 * 3;
+    private int maxAllowedFiles = 3;
+    private List<string> errors = new();
+    private IBrowserFile? file;
+
+
+    //XML-Dto:er
+    private OrderDto newOrderFromXml { get; set; } = new OrderDto();
+
+    //DTO
+    private OrderDTO newOrderToDisplay { get; set; } = new OrderDTO();
+    private OrderDTO searchOrderByNumber { get; set; } = new OrderDTO();
+
+    private bool showCard = false;
+
+    private void ToggleCard()
+    {
+        showCard = !showCard;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        orderList.AddRange(await adminOrderService.GetAllAsync());
+        companyList.AddRange(await adminCompanyService.GetAllAsync());
+        categoryList.AddRange(await adminCategoryService.GetAllAsync());
+        articleList.AddRange(await adminArticleService.GetAllAsync());
+    }
+
+
+
+    private async Task SearchOrderByNumber()
+    {
+
+        if (searchOrderByNumber.OrderNumber == 0)
+        {
+            return;
+        }
+
+        var orderToShow = await adminOrderService.GetOrderByOrderNumberAsync(searchOrderByNumber.OrderNumber);
+
+        if (orderToShow is null)
+        {
+            return;
+        }
+           
+
+        searchedOrder.Clear();
+        searchedOrder.Add(orderToShow);
+        StateHasChanged();
+    }
+    
+    private async Task SubmitForm()
+    {
+        if (newOrderFromXml is null)
+        {
+            return;
+        }
+
+
+        try
+        {
+            string relativePath = await CaptureFile();
+
+            await DeserializeXmlFileToObject(relativePath);
+
+        }
+        catch (Exception ex)
+        {
+            errors.Add($"Error: {ex.Message}");
+
+        }
+    }
+
+    private void LoadFiles(InputFileChangeEventArgs e)
+    {
+
+        file = e.File;
+
+    }
+    
+    private async Task<string> CaptureFile()
+    {
+        if (file is null)
+        {
+            return "";
+        }
+
+        try
+        {
+            string newFileName = Path.ChangeExtension(
+                Path.GetRandomFileName(),
+                Path.GetExtension(file.Name));
+
+
+            Directory.CreateDirectory(Path.Combine
+            (config.GetValue<string>("FileStorage")!,
+                "UploadedXmlOrders"));
+
+            string path = Path.Combine
+            (config.GetValue<string>("FileStorage")!
+                , "UploadedXmlOrders",
+                newFileName);
+
+            await using FileStream fs = new(path, FileMode.Create);
+
+            await file.OpenReadStream(maxFileSize).CopyToAsync(fs);
+
+            return path;
+        }
+        catch (Exception ex)
+        {
+            errors.Add($"File: {file.Name} Error: {ex.Message}");
+            throw;
+        }
+        
+    }
+    
+    private async Task DeserializeXmlFileToObject(string xmlFile)
+    {
+        var xmlSerializer = new XmlSerializer(typeof(OrderDto));
+        using (var reader = new StreamReader(xmlFile))
+        {
+            var order = (OrderDto)xmlSerializer.Deserialize(reader);
+
+            MappingFileToObjects(order);
+        }
+
+    }
+
+    private async Task MappingFileToObjects(OrderDto xmlFile)
+    {
+        CompanyDTO xmlCompanyX = new CompanyDTO();
+
+        var companyExists = companyList.Any(c => c.Email == xmlFile.Company.Email);
+
+        if (!companyExists)
+        {
+            var newCompany = new CompanyDTO
+                {
+
+                    CompanyName = xmlFile.Company.CompanyName,
+                    Email = xmlFile.Company.Email,
+                    Password = xmlFile.Company.Password,
+                    Phone = xmlFile.Company.Phone,
+                    Address = xmlFile.Company.Address,
+                    City = xmlFile.Company.City,
+                    Country = xmlFile.Company.Country,
+
+                };
+            await adminCompanyService.CreateAsync(newCompany);
+
+            companyList.Clear();
+            companyList.AddRange(await adminCompanyService.GetAllAsync());
+            xmlCompanyX = companyList.LastOrDefault();
+
+        }
+        else
+        {
+            var companyX = companyList.FirstOrDefault(c => c.Email == xmlFile.Company.Email);
+            xmlCompanyX = new CompanyDTO
+                {
+                    Id = companyX.Id,
+                    CompanyName = companyX.CompanyName,
+                    Email = companyX.Email,
+                    Password = companyX.Password,
+                    Phone = companyX.Phone,
+                    Address = companyX.Address,
+                    City = companyX.City,
+                    Country = companyX.Country,
+                    Orders = companyX.Orders
+                };
+        }
+        
+        var articleXmlList = new List<ArticleDto>();
+        List<ArticlesInOrderDto> aIoListFromXml = new List<ArticlesInOrderDto>();
+
+        foreach (var xmlArticle in xmlFile.ArticlesInOrderList)
+        {
+            var articleExists = articleList.Any(a => a.Name.ToLower() == xmlArticle.Article.Name.ToLower());
+
+            if (!articleExists)
+            {
+                var newArticleFromXml = new ArticleDTO();
+
+                if (xmlArticle.Article.Category is null)
+                {
+                    var newArticleFromXmlWithNoCategory = new ArticleDTO
+                        {
+                            Name = xmlArticle.Article.Name,
+                            Description = xmlArticle.Article.Description,
+                            Price = xmlArticle.Article.Price,
+                            Category = 5,
+                            Quantity = xmlArticle.Amount,// XML-JT holds the quantity of product
+                            InOrder = new List<ArticlesInOrder>(),
+                            Status = xmlArticle.Article.Status,
+                            Stock = xmlArticle.Amount //Sets the stock to amount of Articles in XML-order.
+                        };
+                    newArticleFromXml = newArticleFromXmlWithNoCategory;
+                }
+                else
+                {
+                    var categoryExist = categoryList.FirstOrDefault(c => c.Id == xmlArticle.Article.Category.Id);
+                    newArticleFromXml = new ArticleDTO
+                        {
+                            Name = xmlArticle.Article.Name,
+                            Description = xmlArticle.Article.Description,
+                            Price = xmlArticle.Article.Price,
+                            Category = categoryExist.Id,
+                            Quantity = xmlArticle.Amount,// XML-JT holds the quantity of product
+                            InOrder = new List<ArticlesInOrder>(),
+                            Status = xmlArticle.Article.Status,
+                            Stock = xmlArticle.Amount //Sets the stock to amount of Articles in XML-order.
+                        };
+                }
+
+                await adminArticleService.CreateAsync(newArticleFromXml);
+                articleList.Clear();
+                articleList.AddRange(await adminArticleService.GetAllAsync());
+
+                var latestArticles = await adminArticleService.GetAllAsync();
+                var newArt = latestArticles.LastOrDefault();
+
+                var categoryName = categoryList.FirstOrDefault(c => c.Id == newArt.Category);
+                
+                var FnewArt = new ArticleDto
+                    {
+                        Id = newArt.Id,
+                        ArticleNumber = newArt.ArticleNumber,
+                        Name = newArt.Name,
+                        Description = newArt.Description,
+                        Price = newArt.Price,
+                        Quantity = xmlArticle.Amount,//Article Entity doesnt have the Quantity prop, this is only for Frontend.
+                        Category = new CategoryDto
+                        {
+                            Id = categoryName.Id,
+                            Name = categoryName.Name
+                        },
+                        Status = newArt.Status,
+                        Stock = newArt.Stock
+                    };
+                articleXmlList.Add(FnewArt);
+            }
+            else
+            {
+                var newArt = articleList.FirstOrDefault(a => a.Name.ToLower().Equals(xmlArticle.Article.Name.ToLower()));
+                if (newArt is null)
+                {
+                    return;
+                }
+
+                var newArticleFromXml = new ArticleDto();
+                var categoryExist = categoryList.FirstOrDefault(c => c.Id == newArt.Category);
+
+                var xmlNewArt = new ArticleDto
+                    {
+                        Id = newArt.Id,
+                        ArticleNumber = newArt.ArticleNumber,
+                        Name = newArt.Name,
+                        Description = newArt.Description,
+                        Price = newArt.Price,
+                        Quantity = xmlArticle.Amount,//Article Entity doesnt have the Quantity prop, this is only for Frontend.
+                        Category = new CategoryDto
+                        {
+                            Id = categoryExist.Id,
+                            Name = categoryExist.Name
+                        },
+                        Status = newArt.Status,
+                        Stock = newArt.Stock
+                    };
+                newArticleFromXml = xmlNewArt;
+                
+
+                articleXmlList.Add(newArticleFromXml);
+            }
+        }
+
+
+
+        foreach (var articles in articleXmlList)
+        {
+            var articlesInOrder = new ArticlesInOrderDto
+                {
+                    Id = 0,
+                    Article = articles,
+                    Order = null,
+                    Amount = articles.Quantity
+                };
+
+            aIoListFromXml.Add(articlesInOrder);
+        }
+
+        articleList.Clear();
+        articleList.AddRange(await adminArticleService.GetAllAsync());
+        StateHasChanged();
+
+
+        var matchedArticleNumbers = aIoListFromXml
+            .Where(a => articleList.Any(p => p.ArticleNumber == a.Article.ArticleNumber))
+            .Select(a => a.Article.ArticleNumber)
+            .ToList();
+
+        var foundArticles = new List<ArticleDTO>();
+        foreach (var articleNumber in matchedArticleNumbers)
+        {
+            var foundArticle = await adminArticleService.GetArticleByNumber(articleNumber);
+            if (foundArticle != null)
+            {
+                foundArticles.Add(foundArticle);
+            }
+        }
+
+
+        var aIoList = aIoListFromXml.Select(aIo => new ArticlesInOrderDTO
+            {
+                Article = foundArticles.FirstOrDefault(fa => fa.ArticleNumber == aIo.Article.ArticleNumber),
+                Order = null,
+                Amount = aIo.Amount
+            }).ToList();
+
+
+
+        var newOrderFromXml = new OrderDTO
+            {
+
+                Company = xmlCompanyX,
+                TotalSum = xmlFile.TotalSum,
+                DateOfOrder = xmlFile.DateOfOrder,
+                ArticlesInOrderList = aIoList.ToList()
+
+            };
+        await adminOrderService.CreateAsync(newOrderFromXml);
+
+
+        orderList.Clear();
+        orderList.AddRange(await adminOrderService.GetAllAsync());
+        StateHasChanged();
+
+        var lastOrderPlaced = orderList.LastOrDefault();
+
+        ShowNewOrder(lastOrderPlaced);
+        StateHasChanged();
+
+    }
+
+    private async void ShowNewOrder(OrderDTO newOrder)
+    {
+
+        if (newOrder is null)
+        {
+            return;
+        }
+
+        newOrderToDisplay = new OrderDTO
+        {
+            Id = newOrder.Id,
+            OrderNumber = newOrder.OrderNumber,
+            Company = newOrder.Company = new CompanyDTO
+            {
+                Id = newOrder.Company.Id,
+                CompanyName = newOrder.Company.CompanyName,
+                Email = newOrder.Company.Email,
+                Password = newOrder.Company.Password,
+                Phone = newOrder.Company.Phone,
+                Address = newOrder.Company.Address,
+                City = newOrder.Company.City,
+                Country = newOrder.Company.Country,
+                Orders = null
+            },
+            TotalSum = newOrder.TotalSum,
+            DateOfOrder = newOrder.DateOfOrder,
+            ArticlesInOrderList = newOrder.ArticlesInOrderList.Select(aio => new ArticlesInOrderDTO
+            {
+                Id = aio.Id,
+                Article = aio.Article = new ArticleDTO
+                {
+                    Id = aio.Article.Id,
+                    ArticleNumber = aio.Article.ArticleNumber,
+                    Name = aio.Article.Name,
+                    Description = aio.Article.Description,
+                    Price = aio.Article.Price,
+                    Quantity = aio.Article.Quantity,
+                    Category = aio.Article.Category,
+                    InOrder = null,
+                    Status = aio.Article.Status,
+                    Stock = aio.Article.Stock
+                },
+                Order = null,
+                Amount = aio.Amount
+            }).ToList()
+
+
+
+        };
+
+
+        orderList.Clear();
+        orderList.AddRange(await adminOrderService.GetAllAsync());
+        StateHasChanged();
+
+        lastOrder.Add(newOrderToDisplay);
+        StateHasChanged();
+
+
+
+
+    }
+
+    private async Task SendToXML(OrderDTO orderToExport)
+    {
+
+        var articlesForOrder = new List<ArticlesInOrderDto>();
+
+        var companyForOrder = companyList.FirstOrDefault(c => c.Id == orderToExport.Company.Id);
+
+        foreach (var article in orderToExport.ArticlesInOrderList)
+        {
+            var articleForOrder = await adminArticleService.GetArticleByNumber(article.Article.ArticleNumber);
+
+            var categoryExist = categoryList.FirstOrDefault(c => c.Id == article.Article.Category);
+
+            var xmlArticle = new ArticlesInOrderDto
+                {
+
+                    Article = new ArticleDto
+                    {
+                        Id = articleForOrder.Id,
+                        ArticleNumber = articleForOrder.ArticleNumber,
+                        Name = articleForOrder.Name,
+                        Description = articleForOrder.Description,
+                        Quantity = article.Amount,
+                        Price = articleForOrder.Price,
+                        Category = new CategoryDto
+                        {
+                            Id = categoryExist.Id,
+                            Name = categoryExist.Name
+
+                        },
+                        Status = articleForOrder.Status,
+                        Stock = articleForOrder.Stock
+                    },
+                    Order = null,
+                    Amount = article.Amount
+                };
+
+
+
+            articlesForOrder.Add(xmlArticle);
+        }
+
+        var xmlOrder = new OrderDto
+            {
+                Id = orderToExport.Id,
+                OrderNumber = orderToExport.OrderNumber,
+                Company = new CompanyDto
+                {
+                    Id = companyForOrder.Id,
+                    CompanyName = companyForOrder.CompanyName,
+                    Email = companyForOrder.Email,
+                    Password = companyForOrder.Password,
+                    Phone = companyForOrder.Phone,
+                    Address = companyForOrder.Address,
+                    City = companyForOrder.City,
+                    Country = companyForOrder.Country
+                },
+                TotalSum = orderToExport.TotalSum,
+                DateOfOrder = orderToExport.DateOfOrder,
+                ArticlesInOrderList = articlesForOrder
+            };
+
+        string newFileName = orderToExport.OrderNumber.ToString();
+
+
+
+        var xmlSerializer = new XmlSerializer(typeof(OrderDto));
+        using (var writer = new StreamWriter($@"C:\Users\mikael.bjornanger\Desktop\XML_Files\ExportedXmlOrder{newFileName}.xml"))
+        {
+            xmlSerializer.Serialize(writer, xmlOrder);
+
+        }
+
+        ShowMessage("Order converted to xml-file. Look in your XML-files folder.");
+
+    }
+
+    private async Task ShowMessage(string message)
+    {
+        await JsRuntime.InvokeVoidAsync("alert", message);
+    }
+
+    #region Button Redirection
+
+    private void GoBack()
+    {
+
+        MethodToRedirectToAdminFrontPage();
+        StateHasChanged();
+
+    }
+
+    void MethodToRedirectToAdminFrontPage()
+    {
+        NavigationManager.NavigateTo("/AdminFrontPage", false);
+        StateHasChanged();
+
+    }
+    private void LogOut()
+    {
+
+        UserManager.Clear();
+        MethodToRedirectToLogin();
+        StateHasChanged();
+
+    }
+
+    void MethodToRedirectToLogin()
+    {
+
+        NavigationManager.NavigateTo("/LoginPage", false);
+        StateHasChanged();
+
+    }
+
+    #endregion
+
+    
+
+  
+
+}

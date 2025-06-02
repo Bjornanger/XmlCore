@@ -1,0 +1,321 @@
+﻿@page "/SearchForArticleInOrders"
+@using XmlCore.Client.Services
+@using XmlCore.Shared.DTO
+@using XmlCore.Shared.Entities
+@using XmlCore.Shared.Interface
+
+
+@inject IJSRuntime JSRuntime
+
+@inject NavigationManager NavigationManager
+@inject UserManager UserManager
+@inject IArticleInterface<ArticleDTO> adminArticleService
+@inject ICategoryInterface<Category> adminCategoryService
+@inject ICompanyInterface<CompanyDTO> adminCompanyService
+@inject IOrderInterface<OrderDTO> adminOrderService
+@inject IArticlesInOrderInterface<ArticlesInOrderDTO> adminArticleInOrderService
+
+@rendermode InteractiveServer
+
+<PageTitle>Search for Article</PageTitle>
+
+<style>
+
+      .container {
+        content: "";
+        display: table;
+        clear: both;
+    }
+
+    .h5-text {
+        font-weight:600;
+    }
+
+</style>
+
+
+<div class="welcome-Background">
+    
+    <div class="top-row px-4 navTop" style="display: flex; gap: 10px; background-color: transparent;">
+
+        <Button class="glow-green-on-hover" Color="Color.Dark" Type="ButtonType.Submit" Style="color:blueviolet" Size="Size.Default" @onclick="GoBack"> Go Back</Button>
+
+        <Button class="glow-red-on-hover" Color="Color.Dark" Type="ButtonType.Submit" Style="color:blueviolet" Size="Size.Default" @onclick="LogOut"> Logout</Button>
+
+    </div>
+    <div class="container">
+        <div class="row">
+            <div class="col"></div>
+            <div class="col">
+                <section>
+                    <EditForm FormName="searchForArticle" Model="searchedArticle" OnValidSubmit="SearchArticle">
+                        <h3 class="h3">Search for Articles in Orders:</h3>
+                        <InputSelect id="searchForArticle" @bind-Value="searchedArticle.ArticleNumber">
+                            <option value=""></option>
+                            @foreach (var article in articleList)
+                            {
+                                <option value="@article.ArticleNumber">@article.Name</option>
+                            }
+                        </InputSelect>
+                        <Button Type="ButtonType.Submit" class="glow-on-hover btn-margin">Search</Button>
+                    </EditForm>
+                </section>
+            </div>
+            <div class="col">
+                <section>
+                
+                    <EditForm FormName="chooseColor" Model="@this">
+                     <h3>Set Color to Article:</h3>
+                     <InputSelect id="searchForArticle" @bind-Value="SelectedColor">
+                         <option value="">Select a color</option>
+                         @foreach (var color in Colors)
+                         {
+                             <option value="@color">@color</option>
+                         }
+                     </InputSelect>
+                     <ValidationMessage For="@(() => SelectedColor)"/>
+                 </EditForm>
+                </section>
+            </div>
+            <div class="col"></div>
+        </div>
+
+        <Divider/>
+
+        <div class="row">
+
+            <div class="col"></div>
+
+            <div class="col-md-4 mx-auto">
+                <section>
+                    @foreach (var article in articleSearched)
+                    {
+
+                        var category = categoryList.FirstOrDefault(a => a.Id == article.Category);
+                        <Card class="card-margin card-visual">
+                            <CardHeader class="card-header">@article.Name</CardHeader>
+                            <CardBody TextColor="TextColor.Black50" TextWeight="TextWeight.Bold">
+                                <div class="col-md-12">
+                                    <div class="card-body">
+                                        <ul class="list-unstyled mt-2 mb-4">
+                                            <li>Article number: @article.ArticleNumber</li>
+                                            <li>Category: @category.Name</li>
+                                            <li>Description: @article.Description</li>
+                                            <li>Price $: @article.Price</li>
+                                            <li>Stock: @article.Stock st</li>
+                                            <li>Color marker:<h5 style="color:@SelectedColor" class="h5-text">@SelectedColor</h5></li>
+                                            
+                                            
+
+                                            
+                                        </ul>
+                                    </div>
+                                </div>
+                            </CardBody>
+                        </Card>
+                    }
+                </section>
+            </div>
+
+            <div class="col"></div>
+
+            <div class="col-sm-4 mx-auto">
+                <section>
+                    @foreach (var order in orderListForSpecArticle)
+                    {
+
+                        <Card class="card-margin card-visual">
+                            <CardHeader class="card-header">Ordernumber: @order.OrderNumber</CardHeader>
+                            <CardBody TextColor="TextColor.Black50" TextWeight="TextWeight.Bold">
+                                <ul class="list-unstyled mt-3 mb-4">
+                                    <li>Order Id: @order.Id</li>
+                                    <li>Company: @order.Company.CompanyName</li>
+                                    <li>Date of Order: @order.DateOfOrder</li>
+                                </ul>
+
+                                @foreach (var article in order.ArticlesInOrderList)
+                                {
+                                    var category = categoryList.FirstOrDefault(a => a.Id == article.Article.Category);
+                                    var colorArticle = articleList.FirstOrDefault(a => a.ArticleNumber == searchedArticle.ArticleNumber);
+
+                                    <ul class="list-unstyled mt-3 mb-4">
+                                        <li>Name: @article.Article.Name</li>
+                                        @if (colorArticle.ArticleNumber != article.Article.ArticleNumber)
+                                        { 
+                                            <li>Article Number: @article.Article.ArticleNumber</li>
+                                        }
+                                        else
+                                        {
+                                            <li style="color:@SelectedColor">Article Number: @colorArticle.ArticleNumber</li>
+                                        }
+                                       
+                                        <li>Category: @category.Name</li>
+                                        <li>Description: @article.Article.Description</li>
+                                        <li>Price $: @article.Article.Price</li>
+                                        <li>Stock: @article.Article.Stock st</li>
+                                    </ul>
+                                }
+                            </CardBody>
+                            <CardFooter class="card-header">
+                                <li>Total Sum $: @order.TotalSum </li>
+                            </CardFooter>
+                        </Card>
+                    }
+                </section>
+            </div>
+            <div class="col"></div>
+        </div>
+    </div>
+</div>
+
+
+
+@code {
+
+    private List<ArticleDTO> articleList { get; set; } = new List<ArticleDTO>();
+    private List<ArticleDTO> articleSearched { get; set; } = new List<ArticleDTO>();
+
+
+    private ArticleDTO searchedArticle { get; set; } = new ArticleDTO();
+
+    private List<Category> categoryList { get; set; } = new List<Category>();
+    private List<CompanyDTO> companyList { get; set; } = new List<CompanyDTO>();
+    private List<OrderDTO> orderList { get; set; } = new List<OrderDTO>();
+    private List<ArticlesInOrderDTO> aIoList { get; set; } = new List<ArticlesInOrderDTO>();
+
+    private List<OrderDTO> orderListForSpecArticle { get; set; } = new List<OrderDTO>();
+
+    private string SelectedColor { get; set; }
+    private List<string> Colors = new List<string>
+    {
+        "Red", "Green", "Blue", "Black", "Purple", "Orange"
+    };
+
+    private string ErrorMessage;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        articleList.AddRange(await adminArticleService.GetAllAsync());
+        categoryList.AddRange(await adminCategoryService.GetAllAsync());
+        companyList.AddRange(await adminCompanyService.GetAllAsync());
+        orderList.AddRange(await adminOrderService.GetAllAsync());
+        aIoList.AddRange(await adminArticleInOrderService.GetAllAsync());
+
+    }
+
+    #region Button Redirection
+    private async void GoBack()
+    {
+
+        MethodToRedirectToSeeArticlePage();
+        StateHasChanged();
+
+    }
+
+    void MethodToRedirectToSeeArticlePage()
+    {
+        NavigationManager.NavigateTo("/SeeAllArticles", false);
+        StateHasChanged();
+
+    }
+    private async void LogOut()
+    {
+
+        UserManager.Clear();
+        MethodToRedirectToLogin();
+        StateHasChanged();
+
+    }
+
+
+
+
+    void MethodToRedirectToLogin()
+    {
+
+        NavigationManager.NavigateTo("/LoginPage", false);
+        StateHasChanged();
+
+    }
+
+
+
+    #endregion
+
+
+
+    private async void SearchArticle()
+    {
+
+
+        if (searchedArticle.ArticleNumber is null)
+        {
+            return;
+        }
+
+        var result = await adminArticleService.GetArticleByNumber(searchedArticle.ArticleNumber);
+
+        if (!string.IsNullOrEmpty(result.ErrorMessage))
+        {
+            await ShowMessage(ErrorMessage = result.ErrorMessage);
+            searchedArticle = null;
+        }
+        else
+        {
+            searchedArticle = result;
+            ErrorMessage = string.Empty;
+        }
+
+
+
+        articleSearched.Clear();
+
+        articleSearched.Add(new ArticleDTO
+            {
+                Id = searchedArticle.Id,
+                ArticleNumber = searchedArticle.ArticleNumber,
+                Name = searchedArticle.Name,
+                Description = searchedArticle.Description,
+                Price = searchedArticle.Price,
+                Quantity = searchedArticle.Quantity,
+                Category = searchedArticle.Category,
+                InOrder = searchedArticle.InOrder,
+                Status = searchedArticle.Status,
+                Stock = searchedArticle.Stock
+            });
+
+            
+        ShowSearchedArticleInOrders(searchedArticle);
+        StateHasChanged();
+
+    }
+
+
+    private async void ShowSearchedArticleInOrders(ArticleDTO showArticle)
+    {
+        if (showArticle is null)
+        {
+            return;
+        }
+
+        var newOrderLIst = orderList
+            .Where(o => o.ArticlesInOrderList
+                .Any(a => a.Article.ArticleNumber == showArticle.ArticleNumber)).ToList();
+
+        orderListForSpecArticle = newOrderLIst;
+        StateHasChanged();
+    }
+    
+
+    private async Task ShowMessage(string message)
+    {
+        await JSRuntime.InvokeVoidAsync("alert", message);
+    }
+
+   
+
+
+
+
+}

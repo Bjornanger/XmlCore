@@ -1,0 +1,191 @@
+﻿@page "/UpdateInfoPage"
+@using XmlCore.Client.Services
+@using XmlCore.Shared.DTO
+@using XmlCore.Shared.Interface
+
+@inject NavigationManager NavigationManager
+@inject CompanyManager CompanyManager
+@inject IJSRuntime JSRuntime
+
+@inject ICompanyInterface<CompanyDTO> adminCompanyService
+
+@rendermode InteractiveServer
+
+
+<PageTitle>Update</PageTitle>
+
+
+<div class="welcome-Background">
+    <div class="top-row px-4 navTop" style="display: flex; gap: 10px; background-color: transparent;">
+
+        <Button class="glow-green-on-hover" Color="Color.Dark" Type="ButtonType.Submit" Style="color:blueviolet" Size="Size.Default" @onclick="GoBack"> Go Back</Button>
+
+        <Button class="glow-red-on-hover" Color="Color.Dark" Type="ButtonType.Submit" Style="color:blueviolet" Size="Size.Default" @onclick="LogOut"> Logout</Button>
+
+    </div>
+
+
+    <h3>Update Info</h3>
+
+    <div class="row">
+        <div class="col m-3"></div>
+       
+        
+        <div class="col m-3">
+
+            <section>
+                <EditForm FormName="UpdateCompany" Model="companyToFind" OnValidSubmit="UpdateCompany">
+                    <DataAnnotationsValidator />
+                  
+
+                    <div>
+                        <label for="companyName">Company Name:</label>
+                        <InputText id="companyName" class="form-control" @bind-Value="companyToFind.CompanyName" placeholder="Put company name here." />
+                    </div>
+                    <div>
+                        <label for="companyEmail">Email:</label>
+                        <InputText id="companyEmail" class="form-control" @bind-Value="companyToFind.Email" placeholder="Register emailaddress here." />
+                    </div>
+                    <div>
+                        <label for="companyPassword">Password:</label>
+                        <InputText id="companyPassword" class="form-control" @bind-Value="companyToFind.Password" placeholder="Create Password here." />
+                    </div>
+                    <div>
+                        <label for="companyPhone">Phone:</label>
+                        <InputText id="companyPhone" class="form-control" @bind-Value="companyToFind.Phone" placeholder="Add Phone number here." />
+                    </div>
+                    <div>
+                        <label for="companyAddress">Address:</label>
+                        <InputText id="companyAddress" class="form-control" @bind-Value="companyToFind.Address" placeholder="Add Address here." />
+                    </div>
+                    <div>
+                        <label for="companyCity">City:</label>
+                        <InputText id="companyCity" class="form-control" @bind-Value="companyToFind.City" placeholder="Add City here." />
+                    </div>
+                    <div>
+                        <label for="companyCountry">Country:</label>
+                        <InputText id="companyCountry" class="form-control" @bind-Value="companyToFind.Country" placeholder="Add Country here." />
+                    </div>
+                    <Button Type="ButtonType.Submit" class="glow-on-hover btn-margin">Update</Button>
+                </EditForm>
+            </section>
+
+        </div>
+        <div class="col m-3">
+        </div>
+    </div>
+
+
+
+
+
+
+</div>
+
+
+@code {
+    private CompanyDTO companyToFind { get; set; } = new CompanyDTO();
+    private List<CompanyDTO> companyList { get; set; } = new List<CompanyDTO>();
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        companyList.AddRange(await adminCompanyService.GetAllAsync());
+        companyToFind = CompanyManager.Get();
+    }
+
+
+    private async Task UpdateCompany()
+    {
+
+        if (companyToFind.Id == 0)
+        {
+            return;
+        }
+
+
+        var companyToUpdate = await adminCompanyService.GetByIdAsync(companyToFind.Id);
+
+        if (companyToUpdate is null)
+        {
+
+            await ShowMessage("No Company with that Id was found.");
+            return;
+
+        }
+
+
+        var updatedCompanyFromUser = new CompanyDTO
+        {
+            Id = companyToUpdate.Id,
+                CompanyName = companyToFind.CompanyName,
+                Email = companyToFind.Email,
+                Password = companyToFind.Password,
+                Phone = companyToFind.Phone,
+                Address = companyToFind.Address,
+                City = companyToFind.City,
+                Country = companyToFind.Country,
+            Orders = companyToUpdate.Orders
+
+        };
+
+
+        await adminCompanyService.UpdateAsync(updatedCompanyFromUser, updatedCompanyFromUser.Id);
+        companyList.Clear();
+        companyList.AddRange(await adminCompanyService.GetAllAsync());
+        companyToFind = updatedCompanyFromUser;
+        StateHasChanged();
+        await ShowMessage("Company info updated.");
+        companyToFind = new CompanyDTO();
+      
+      
+    }
+
+    private async Task ShowMessage(string message)
+    {
+        await JSRuntime.InvokeVoidAsync("alert", message);
+    }
+
+    #region Button Redirection
+
+    private async void GoBack()
+    {
+
+        MethodToRedirectToProfilePage();
+        StateHasChanged();
+
+    }
+
+    void MethodToRedirectToProfilePage()
+    {
+        NavigationManager.NavigateTo("/ProfilePage", false);
+        StateHasChanged();
+
+    }
+    private async void LogOut()
+    {
+
+        CompanyManager.Clear();
+        MethodToRedirectToLogin();
+        StateHasChanged();
+
+    }
+
+    
+
+    void MethodToRedirectToLogin()
+    {
+
+        NavigationManager.NavigateTo("/LoginPage", false);
+        StateHasChanged();
+
+    }
+
+    #endregion
+
+
+   
+   
+
+
+}

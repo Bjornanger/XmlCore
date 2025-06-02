@@ -1,0 +1,255 @@
+﻿@page "/OrdersInCompany"
+@using XmlCore.Client.Services
+@using XmlCore.Shared.DTO
+@using XmlCore.Shared.Entities
+@using XmlCore.Shared.Interface
+
+@inject NavigationManager NavigationManager
+@inject UserManager UserManager
+@inject ICompanyInterface<CompanyDTO> adminCompanyService
+@inject IOrderInterface<OrderDTO> adminOrderService
+@inject ICategoryInterface<Category> adminCategoryService
+
+
+@inject IJSRuntime JSRuntime
+@rendermode InteractiveServer
+
+<PageTitle>Orders in Company</PageTitle>
+
+
+<div class="welcome-Background">
+    
+    
+    <div class="top-row px-4 navTop" style="display: flex; gap: 10px; background-color: transparent;">
+
+        <Button class="glow-green-on-hover" Color="Color.Dark" Type="ButtonType.Submit" Style="color:blueviolet" Size="Size.Default" @onclick="GoBack"> Go Back</Button>
+
+        <Button class="glow-red-on-hover" Color="Color.Dark" Type="ButtonType.Submit" Style="color:blueviolet" Size="Size.Default" @onclick="LogOut"> Logout</Button>
+
+    </div>
+    <div class="container">
+
+
+        <div>
+            <section>
+                <h2>Choose Company to see orders from:</h2>
+                <EditForm FormName="SearchForCompany" Model="selectedCompany.Id" OnSubmit="SelectCompany">
+                    <InputSelect id="SearchForCompany" @bind-Value="selectedCompany.Id" placeholder="Pick Company to update.">
+                        <option value=""></option>
+                        @foreach (var company in companyList)
+                        {
+                            <option value="@company.Id">@company.CompanyName</option>
+                        }
+                    </InputSelect>
+                    <Button Type="ButtonType.Submit" class="glow-on-hover btn-margin">Select</Button>
+
+                </EditForm>
+            </section>
+        </div>
+
+        <div class="row">
+            <div class="col">
+                <section>
+                    <div class="container-sm">
+                        <div class="row">
+                            <Virtualize Items="companyInfoList">
+                                <ItemContent>
+                                    <h2>Company</h2>
+                                    @foreach (var company in companyInfoList)
+                                    {
+                                        <div class="col-md mx-auto">
+                                            <Card class="card-margin card-visual">
+
+                                                <CardHeader class="card-header"> @company.CompanyName</CardHeader>
+                                                <CardBody TextColor="TextColor.Black50" TextWeight="TextWeight.Bold">
+                                                    <ul class="list-unstyled mt-3 mb-4">
+                                                        <li>Email: @company.Email</li>
+                                                        <li>Password: @company.Password</li>
+                                                        <li>Phone: @company.Phone</li>
+                                                        <li>Address: @company.Address</li>
+                                                        <li>City: @company.City</li>
+                                                        <li>Country: @company.Country</li>
+                                                    </ul>
+                                                </CardBody>
+
+                                            </Card>
+                                        </div>
+                                    }
+                                </ItemContent>
+                            </Virtualize>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <div class="col"></div>
+
+            <div class="col">
+                <Virtualize Items="companyOrders">
+                    <ItemContent>
+                        <h2>Order</h2>
+                        @foreach (var company in companyOrders)
+                        {
+
+                            <div class="col-md mx-auto">
+                                <Card class="card-margin card-visual">
+
+                                    <CardHeader class="card-header">@company.CompanyName</CardHeader>
+
+                                    <CardBody TextColor="TextColor.Black50" TextWeight="TextWeight.Bold">
+                                        <ul>
+                                            @foreach (var order in company.Orders)
+                                            {
+                                                <li><CardTitle Size="3" TextColor="TextColor.Black50">Ordernumber: @order.OrderNumber</CardTitle></li>
+
+                                                <li>Order Date: @order.DateOfOrder</li>
+
+
+                                                <ul>
+                                                    @foreach (var ooa in order.ArticlesInOrderList)
+                                                    {
+
+                                                        var category = allCategories.FirstOrDefault(a => a.Id == @ooa.Article.Category);
+
+
+                                                        <li>Name: @ooa.Article.Name</li>
+                                                        <li>Article Number: @ooa.Article.ArticleNumber</li>
+                                                        <li>Category: @category.Name</li>
+                                                        <li>Description: @ooa.Article.Description</li>
+                                                        <li>Quantity: @ooa.Amount St</li>
+                                                        <li>Price $:@ooa.Article.Price</li>
+                                                        <Divider/>
+
+
+                                                    }
+
+                                                </ul>
+                                                <li>Order Sum $: @order.TotalSum</li>
+                                                <Divider/>
+                                            }
+                                        </ul>
+                                    </CardBody>
+                                </Card>
+                            </div>
+                        }
+                    </ItemContent>
+                </Virtualize>
+            </div>
+
+        </div>
+    </div>
+
+
+
+</div>
+
+
+
+
+
+
+@code {
+
+    private CompanyDTO selectedCompany { get; set; } = new CompanyDTO();
+
+    private CompanyDTO companyInfo { get; set; } = new CompanyDTO();
+
+
+
+    private List<CompanyDTO> companyOrders { get; set; } = new List<CompanyDTO>();
+
+    private List<CompanyDTO> companyList { get; set; } = new List<CompanyDTO>();
+
+    private List<CompanyDTO> companyInfoList { get; set; } = new List<CompanyDTO>();
+
+    private List<OrderDTO> orderList { get; set; } = new List<OrderDTO>();
+
+    private List<Category> allCategories { get; set; } = new List<Category>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        companyList.AddRange(await adminCompanyService.GetAllAsync());
+        orderList.AddRange(await adminOrderService.GetAllAsync());
+        allCategories.AddRange(await adminCategoryService.GetAllAsync());
+    }
+
+    #region Button Redirection
+
+    private async void GoBack()
+    {
+
+        MethodToRedirectToSeeAllCompanyPage();
+        StateHasChanged();
+
+    }
+
+    void MethodToRedirectToSeeAllCompanyPage()
+    {
+        NavigationManager.NavigateTo("/SeeAllCompanies", false);
+        StateHasChanged();
+
+    }
+    private async void LogOut()
+    {
+
+        UserManager.Clear();
+        MethodToRedirectToLogin();
+        StateHasChanged();
+
+    }
+
+
+
+
+    void MethodToRedirectToLogin()
+    {
+
+        NavigationManager.NavigateTo("/LoginPage", false);
+        StateHasChanged();
+
+    }
+
+
+    #endregion
+    
+    
+    private async void SelectCompany()
+    {
+
+        var company = companyList.FirstOrDefault(c => c.Id == selectedCompany.Id);
+        
+
+        if (company is null)
+        {
+            await ShowMessage("No Company with that Id was found.");
+            return;
+        }
+        
+
+        companyInfo = new CompanyDTO
+            {
+                Id = company.Id,
+                CompanyName = company.CompanyName,
+                Email = company.Email,
+                Password = company.Password,
+                Phone = company.Phone,
+                Address = company.Address,
+                City = company.City,
+                Country = company.Country,
+                Orders = company.Orders
+            };
+
+        companyInfoList.Clear();
+        companyInfoList.Add(companyInfo);
+        companyOrders.Clear();
+        var ordersFromSelectedCompany = await adminCompanyService.GetAllOrdersForCompany(company.Id);
+        companyOrders.Add(ordersFromSelectedCompany);
+        StateHasChanged();
+
+    }
+
+    private async Task ShowMessage(string message)
+    {
+        await JSRuntime.InvokeVoidAsync("alert", message);
+    }
+}

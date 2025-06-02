@@ -1,0 +1,208 @@
+﻿@page "/CreateArticle"
+@using XmlCore.Client.Services
+@using XmlCore.Shared.DTO
+@using XmlCore.Shared.Entities
+@using XmlCore.Shared.Interface
+
+@inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+@inject IArticleInterface<ArticleDTO> adminArticleService
+@inject ICategoryInterface<Category> adminCategoryService
+@inject UserManager UserManager
+@rendermode InteractiveServer
+
+<PageTitle>Create Article</PageTitle>
+
+<div class="welcome-Background">
+    <div class="top-row px-4 navTop" style="display: flex; gap: 10px; background-color: transparent;">
+
+        <Button class="bi bi-backspace glow-green-on-hover" Color="Color.Dark" Type="ButtonType.Submit" Style="color:blueviolet" Size="Size.Default" @onclick="GoBack"> Go Back</Button>
+
+        <Button class="bi bi-door-closed glow-red-on-hover" Color="Color.Dark" Type="ButtonType.Submit" Style="color:blueviolet" Size="Size.Default" @onclick="LogOut"> Logout</Button>
+
+
+    </div>
+ 
+
+    <div class="row">
+        <div class="col"></div>
+        <div class="col m-4">
+            <h3>Create New Article</h3>
+            <section>
+                <EditForm Model="newArticle" FormName="CreateArticle" OnValidSubmit="AddArticle">
+                    <DataAnnotationsValidator/>
+                    <div>
+                        <label for="articleName">Article Name:</label>
+                        <InputText class="form-control" id="articleName" @bind-Value="newArticle.Name" placeholder="Add name:"></InputText>
+                    </div>
+                    <div>
+                        <label for="articleDescription">Description:</label>
+                        <InputText class="form-control" id="articleDescription" @bind-Value="newArticle.Description" placeholder="Put description here:"></InputText>
+                    </div>
+                    <div>
+                        <label for="articlePrice">Price $:</label>
+                        <InputNumber class="form-control" id="articlePrice" @bind-Value="newArticle.Price" placeholder="Price $:"></InputNumber>
+                    </div>
+                    <br/>
+                    <div>
+                        <label for="articleCategory">Category:</label>
+                        <InputSelect id="articleCategory" @bind-Value="newArticle.Category">
+                            <option value=""></option>
+                            @foreach (var category in allCategories)
+                            {
+                                <option value="@category.Id">@category.Name</option>
+                            }
+                        </InputSelect>
+                    </div>
+                    <br/>
+                    <div>
+                        <label for="articleStock">Stock volume:</label>
+                        <InputNumber class="form-control" id="articleStock" @bind-Value="newArticle.Stock" placeholder="How many:"></InputNumber>
+                    </div>
+                    <Button Type="ButtonType.Submit" class="glow-on-hover btn-margin">Submit</Button>
+
+                </EditForm>
+            </section>
+
+            <div class="col">
+                <Virtualize Items="allArticles">
+                    <ItemContent>
+                        <ul>
+                            <li>@context.Name</li>
+                        </ul>
+                    </ItemContent>
+                </Virtualize>
+            </div>
+
+        </div>
+
+
+        <div class="col m-3">
+
+         
+                <section>
+                    <h2>Create Category</h2>
+                    <EditForm Model="newCategory" FormName="createCategory" OnValidSubmit="CreateCategory">
+                        <DataAnnotationsValidator/>
+                        <label for="createCategory">Name:</label>
+                        <InputText id="createCategory" class="form-control" @bind-Value="newCategory.Name" placeholder="Name:"></InputText>
+                    <Button Type="ButtonType.Submit" class="glow-on-hover btn-margin">Submit</Button>
+                    </EditForm>
+
+                </section>
+          
+
+
+            <div>
+                <Virtualize Items="allCategories">
+                    <ItemContent>
+                        <ul>
+                            <li>@context.Name</li>
+                        </ul>
+                    </ItemContent>
+                </Virtualize>
+            </div>
+
+        </div>
+        <div class="col"></div>
+    </div>
+
+   
+
+   
+</div>
+
+
+
+@code {
+    private ArticleDTO newArticle { get; set; } = new ArticleDTO();
+    private List<ArticleDTO> allArticles { get; set; } = new List<ArticleDTO>();
+
+
+    private Category newCategory { get; set; } = new Category();
+    private List<Category> allCategories { get; set; } = new List<Category>();
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        allArticles.AddRange(await adminArticleService.GetAllAsync());
+        allCategories.AddRange(await adminCategoryService.GetAllAsync());
+    }
+
+    #region Button Redirection
+    private async void GoBack()
+    {
+
+        MethodToRedirectToSeeArticlePage();
+        StateHasChanged();
+
+    }
+
+    void MethodToRedirectToSeeArticlePage()
+    {
+        NavigationManager.NavigateTo("/SeeAllArticles", false);
+        StateHasChanged();
+
+    }
+    private async void LogOut()
+    {
+
+        UserManager.Clear();
+        MethodToRedirectToLogin();
+        StateHasChanged();
+
+    }
+
+
+
+
+    void MethodToRedirectToLogin()
+    {
+
+        NavigationManager.NavigateTo("/LoginPage", false);
+        StateHasChanged();
+
+    }
+
+
+
+    #endregion
+
+
+    private async void AddArticle()
+    {
+
+        await adminArticleService.CreateAsync(newArticle);
+
+        if (newArticle is null)
+        {
+
+            await ShowMessage("Article not created.");
+        }
+
+
+        allArticles.Clear();
+        allArticles.AddRange(await adminArticleService.GetAllAsync());
+        newArticle = new ArticleDTO();
+        StateHasChanged();
+      
+    }
+
+    private async void CreateCategory()
+    {
+        if (newCategory is null)
+        {
+            await ShowMessage("Have to Name the Category.");
+        }
+
+        await adminCategoryService.CreateAsync(newCategory);
+        allCategories.Clear();
+        allCategories.AddRange(await adminCategoryService.GetAllAsync());
+        StateHasChanged();
+    }
+
+    private async Task ShowMessage(string message)
+    {
+        await JSRuntime.InvokeVoidAsync("alert", message);
+    }
+}

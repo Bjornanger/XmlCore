@@ -1,0 +1,234 @@
+﻿@* @page "/XMLOrderExporter"
+@using System.Xml.Serialization
+@using CGI.OrderSystem.Client.Services
+@using CGI.OrderSystem.Shared.DTO
+@using CGI.OrderSystem.Shared.Interface
+@using global::Shared.Entities
+@inject IJSRuntime JSRuntime
+@inject IOrderInterface<OrderDTO> adminOrderService
+@inject ICompanyInterface<CompanyDTO> adminCompanyService
+@inject ICategoryInterface<Category> adminCategoryService
+@inject IArticleInterface<ArticleDTO> adminArticleService
+
+@inject NavigationManager NavigationManager
+@inject UserManager UserManager
+
+@rendermode InteractiveServer
+
+<style>
+    .welcome-Background {
+        background-image: linear-gradient(180deg, rgb(5, 39, 103) 0%, #3a0647 70%);
+        min-height: 100vh;
+        background-size: cover;
+        background-attachment: fixed;
+        color: white;
+    }
+
+    .container {
+        content: "";
+        display: table;
+        clear: both;
+    }
+</style>
+
+
+<div class="top-row px-4 navTop" style="display: flex; gap: 10px; background-color: black;">
+
+    <Button Type="ButtonType.Submit" Style="color:blueviolet" Size="Size.Default" @onclick="GoBack">Go Back</Button>
+
+    <Button Type="ButtonType.Submit" Style="color:blueviolet" Size="Size.Default" @onclick="LogOut">Logout</Button>
+
+</div>
+
+<div class="welcome-Background">
+
+
+    <h3>XMLOrderExporter</h3>
+
+
+    <div class="container-sm">
+        <div class="row">
+
+            @foreach (var order in orderList)
+            {
+                var company = companyList.FirstOrDefault(c => c.Id == order.Company.Id);
+                if (company != null)
+                {
+                    <div class="col-md-4">
+
+                        <Card>
+                            <CardHeader TextAlignment="TextAlignment.Center" TextColor="TextColor.White" TextWeight="TextWeight.Bold"
+                                        Background="Background.Dark">Ordernumber: @order.OrderNumber</CardHeader>
+                            <CardBody TextColor="TextColor.Black50" TextWeight="TextWeight.Bold">
+                                <ul class="list-unstyled mt-3 mb-4">
+                                    <li>Company: @company.CompanyName</li>
+                                    <li>Date: @order.DateOfOrder</li>
+                                    @foreach (var aio in order.ArticlesInOrderList)
+                                    {
+                                        var category = categoryList.FirstOrDefault(c => c.Id == aio.Article.Category);
+                                        if (category != null)
+                                        {
+                                            <ul>
+                                                <li>ArticleNumber: @aio.Article.ArticleNumber</li>
+                                                <li>Name: @aio.Article.Name</li>
+                                                <li>Category: @category.Name</li>
+                                                <li>Description: @aio.Article.Description</li>
+                                                <li>Amount: @aio.Amount</li>
+                                                <li>Price $: @aio.Article.Price</li>
+                                                <Divider />
+                                            </ul>
+                                        }
+
+                                    }
+                                    <li>Total sum $: @order.TotalSum</li>
+                                    <CardFooter Background="Background.Dark">
+                                        <button type="submit" @onclick="() => SendToXML(order)"> Export to XML</button>
+                                    </CardFooter>
+                                    <Divider />
+                                </ul>
+                            </CardBody>
+                        </Card>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+
+
+
+
+
+</div>
+
+@code {
+    private List<OrderDTO> orderList { get; set; } = new List<OrderDTO>();
+    private List<CompanyDTO> companyList { get; set; } = new List<CompanyDTO>();
+    private List<Category> categoryList { get; set; } = new List<Category>();
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        orderList.AddRange(await adminOrderService.GetAllAsync());
+        companyList.AddRange(await adminCompanyService.GetAllAsync());
+        categoryList.AddRange(await adminCategoryService.GetAllAsync());
+    }
+
+
+    private async Task SendToXML(OrderDTO orderToExport)
+    {
+
+        var articlesForOrder = new List<ArticlesInOrderDto>();
+
+        var companyForOrder = companyList.FirstOrDefault(c => c.Id == orderToExport.Company.Id);
+
+        foreach (var article in orderToExport.ArticlesInOrderList)
+        {
+            var articleForOrder = await adminArticleService.GetArticleByNumber(article.Article.ArticleNumber);
+
+            var categoryExist = categoryList.FirstOrDefault(c => c.Id == article.Article.Category);
+
+            var xmlArticle = new ArticlesInOrderDto
+                {
+
+                    Article = new ArticleDto
+                    {
+                        Id = articleForOrder.Id,
+                        ArticleNumber = articleForOrder.ArticleNumber,
+                        Name = articleForOrder.Name,
+                        Description = articleForOrder.Description,
+                        Quantity = article.Amount,
+                        Price = articleForOrder.Price,
+                        Category = new CategoryDto
+                        {
+                            Id = categoryExist.Id,
+                            Name = categoryExist.Name
+
+                        },
+                        Status = articleForOrder.Status,
+                        Stock = articleForOrder.Stock
+                    },
+                    Order = null,
+                    Amount = article.Amount
+                };
+
+
+
+            articlesForOrder.Add(xmlArticle);
+        }
+
+        var xmlOrder = new OrderDto
+            {
+                Id = orderToExport.Id,
+                OrderNumber = orderToExport.OrderNumber,
+                Company = new CompanyDto
+                {
+                    Id = companyForOrder.Id,
+                    CompanyName = companyForOrder.CompanyName,
+                    Email = companyForOrder.Email,
+                    Password = companyForOrder.Password,
+                    Phone = companyForOrder.Phone,
+                    Address = companyForOrder.Address,
+                    City = companyForOrder.City,
+                    Country = companyForOrder.Country
+                },
+                TotalSum = orderToExport.TotalSum,
+                DateOfOrder = orderToExport.DateOfOrder,
+                ArticlesInOrderList = articlesForOrder
+            };
+
+        string newFileName = orderToExport.OrderNumber.ToString();
+
+
+
+        var xmlSerializer = new XmlSerializer(typeof(OrderDto));
+        using (var writer = new StreamWriter($@"C:\Users\mikael.bjornanger\Desktop\XML_Files\ExportedXmlOrder{newFileName}.xml"))
+        {
+            xmlSerializer.Serialize(writer, xmlOrder);
+
+        }
+
+        ShowMessage("Order converted to xml-file. Look in your XML-files folder.");
+
+    }
+
+
+
+    private void GoBack()
+    {
+
+        MethodToRedirectToAdminFrontPage();
+        StateHasChanged();
+
+    }
+
+    void MethodToRedirectToAdminFrontPage()
+    {
+        NavigationManager.NavigateTo("/OrderOptionsPage", false);
+        StateHasChanged();
+
+    }
+    private void LogOut()
+    {
+
+        UserManager.Clear();
+        MethodToRedirectToLogin();
+        StateHasChanged();
+
+    }
+
+    void MethodToRedirectToLogin()
+    {
+
+        NavigationManager.NavigateTo("/LoginPage", false);
+        StateHasChanged();
+
+    }
+
+    private async Task ShowMessage(string message)
+    {
+        await JSRuntime.InvokeVoidAsync("alert", message);
+    }
+
+
+} *@

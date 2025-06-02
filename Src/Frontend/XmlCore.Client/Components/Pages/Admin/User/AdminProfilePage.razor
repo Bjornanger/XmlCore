@@ -1,0 +1,203 @@
+﻿@page "/AdminProfilePage"
+@using XmlCore.Client.Services
+@using XmlCore.Shared.Entities
+@using XmlCore.Shared.Interface
+
+@inject IUserInterface<User> adminUserService
+@inject UserManager userManager
+@inject NavigationManager NavigationManager
+@rendermode InteractiveServer
+
+<PageTitle>Profile</PageTitle>
+
+<style>  
+     
+
+    .card {
+        border: 2px solid;
+        border-color: transparent;
+        border-radius: 30px;
+        padding: 1.5em;
+        margin: 60px 20px 20px 20px;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        text-align: center;
+        background: #f9f9f9;
+        transition: transform 0.3s, box-shadow 0.3s;
+        opacity: 0.90;
+    }
+
+  
+
+    .profile-image {
+        border-radius: 50%;
+        border: 2px solid;
+        border-color: rebeccapurple;
+        box-shadow: 0 4px 8px rgba(0, 0, 3, 0.4);
+        width: 180px;
+        height: 180px;
+        object-fit: cover;
+        margin-bottom: 1em;
+    }
+
+    .card-title h1 {
+        font-size: 2.5em;
+        margin-bottom: 0.5em;
+        font-weight: 700;
+        color: black;
+    }
+
+    .card-text h5 {
+        font-size: 1.5em;
+        margin-bottom: 0.5em;
+        font-weight: 400;
+        color: black;
+    }
+
+    .card-text {
+        font-size: 1.2em;
+        color: #333;
+    }
+
+    .card-body p {
+        margin: 0.5em 0;
+    }
+
+    .card-body hr {
+        border: 0.5px solid #ddd;
+        margin: 1em 0;
+    }
+
+    .list-group-item {
+        background: transparent;
+        border: none;
+        font-size: 1em;
+        color: #666;
+    }
+
+    .card-footer button {
+        padding: 0.75em 1.5em;
+        font-size: 1em;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+
+        .card-footer button:hover {
+            background-color: #0056b3;
+        }
+
+
+</style>
+
+
+
+<div class="welcome-Background">
+    <div class="top-row px-4 navTop" style="display: flex; gap: 10px; background-color: transparent;">
+
+        <Button class="bi bi-backspace glow-green-on-hover" Color="Color.Dark" Type="ButtonType.Submit" Style="color:blueviolet" Size="Size.Default" @onclick="GoBack"> Go Back</Button>
+
+        <Button class="bi bi-door-closed glow-red-on-hover" Color="Color.Dark" Type="ButtonType.Submit" Style="color:blueviolet" Size="Size.Default" @onclick="LogOut"> Logout</Button>
+
+    </div>
+    <div class="container">
+        <div class="row m-4">
+            <div class="col m-3"></div>
+            <div class="col-md-8">
+                @foreach (var item in adminToShow)
+                {
+                    <div class="row justify-content-center">
+
+                        <Card class="card-opacity">
+                            <CardImage Shadow="Shadow.Default" class="profile-image" Source="..\Images\ProfilbildCgi.jpg" Alt="Profile"></CardImage>
+                            <CardBody TextColor="TextColor.Black50" TextWeight="TextWeight.Bold">
+                                <CardTitle class="card-title" Size="5" TextAlignment="TextAlignment.Center" TextWeight="TextWeight.Bold"><h1>@item.Name @item.Surname</h1></CardTitle>
+                                <p class="card-text">Fullstack Developer at CGI</p>
+                                <CardText>
+                                    I’m a fullstack-developer with a knack for being a problem solver and quick-fix expert.
+                                    When I’m not coding, you’ll find me exploring new cuisines as a passionate foodie or enjoying the great outdoors as a nature lover.
+                                    Always striving to be a force to reckon with in both my professional and personal life.
+                                </CardText>
+                                <hr/>
+                                <CardTitle class="card-text" Size="5"><h5>Contact Information:</h5></CardTitle>
+                                <ul class="list-group list-group-flush ">
+                                    <li class="list-group-item"><strong>Email:</strong> @item.Email</li>
+                                    <li class="list-group-item"><strong>Phone:</strong> 0705-34 54 56</li>
+                                    <li class="list-group-item"><strong>Location:</strong> Göteborg, Sweden</li>
+                                </ul>
+                            </CardBody>
+                        </Card>
+                    </div>
+
+                }
+            </div>
+            <div class="col m3"></div>
+        </div>
+    </div>
+
+</div>
+
+
+
+
+
+@code {
+    private List<User> userList { get; set; } = new List<User>();
+    private List<User> adminToShow { get; set; } = new List<User>();
+    private User admin { get; set; } = new User();
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        userList.AddRange(await adminUserService.GetAllAsync());
+
+        admin = userManager.Get();
+        adminToShow.Add(admin);
+        StateHasChanged();
+
+    }
+
+    #region Button Redirection
+
+    private async void GoBack()
+    {
+
+        MethodToRedirectToAdminFrontPage();
+        StateHasChanged();
+
+    }
+
+    void MethodToRedirectToAdminFrontPage()
+    {
+        NavigationManager.NavigateTo("/AdminFrontPage", false);
+        StateHasChanged();
+
+    }
+    private async void LogOut()
+    {
+
+        userManager.Clear();
+        MethodToRedirectToLogin();
+        StateHasChanged();
+
+    }
+
+
+
+
+    void MethodToRedirectToLogin()
+    {
+
+        NavigationManager.NavigateTo("/LoginPage", false);
+        StateHasChanged();
+
+    }
+
+    #endregion
+
+
+  
+
+}
